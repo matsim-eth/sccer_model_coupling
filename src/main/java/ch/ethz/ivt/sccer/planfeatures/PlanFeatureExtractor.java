@@ -1,0 +1,67 @@
+package ch.ethz.ivt.sccer.planfeatures;
+
+import org.matsim.api.core.v01.population.HasPlansAndId;
+import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.Plan;
+import org.matsim.api.core.v01.population.Population;
+import org.matsim.core.utils.io.IOUtils;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.DoubleFunction;
+import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
+
+/**
+ * @author thibautd
+ */
+public class PlanFeatureExtractor {
+	private final List<Feature> features = new ArrayList<>();
+
+	public PlanFeatureExtractor withFeature( String name , Function<Plan,String> function ) {
+		features.add( new Feature( name , function ) );
+		return this;
+	}
+
+	public PlanFeatureExtractor withFeature( String name , ToDoubleFunction<Plan> function ) {
+		return withFeature(
+				name,
+				(Plan plan) -> ""+function.applyAsDouble( plan ) );
+	}
+
+	public void writeFeatures( Population population , String file ) {
+		try ( BufferedWriter writer = IOUtils.getBufferedWriter( file ) ) {
+			writer.write( "agentId" );
+			for ( Feature f : features ) {
+				writer.write( "\t"+f.name );
+			}
+
+			for ( Person person : population.getPersons().values() ) {
+				final Plan plan = person.getSelectedPlan();
+
+				writer.newLine();
+				writer.write( person.getId().toString() );
+				for ( Feature feature : features ) writer.write( "\t"+feature.function.apply( plan ) );
+			}
+		}
+		catch ( IOException e ) {
+			throw new UncheckedIOException( e );
+		}
+	}
+
+	private static class Feature {
+		private final String name;
+		private final Function<Plan,String> function;
+
+		private Feature(
+				final String name,
+				final Function<Plan, String> function ) {
+			this.name = name;
+			this.function = function;
+		}
+	}
+
+}
