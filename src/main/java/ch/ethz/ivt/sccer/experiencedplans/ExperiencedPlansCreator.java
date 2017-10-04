@@ -27,14 +27,11 @@ import java.util.Map;
  */
 public class ExperiencedPlansCreator {
 	public static void replacePlansByExperiencedPlans(
-			final Population inputPopulation,
+			final Scenario scenario,
 			final String eventsFile ) {
 
-		Config config = ConfigUtils.createConfig();
-		final Scenario inputSc = ScenarioUtils.createScenario(config);
-
-		com.google.inject.Injector injector = Injector.createInjector(config,
-				new ScenarioByInstanceModule(inputSc),
+		com.google.inject.Injector injector = Injector.createInjector(scenario.getConfig(),
+				new ScenarioByInstanceModule(scenario),
 				new ExperiencedPlansModule(),
 				new CharyparNagelScoringFunctionModule(),
 				new EventsManagerModule(),
@@ -44,7 +41,7 @@ public class ExperiencedPlansCreator {
 		ExperiencedPlansService experiencedPlansService = injector.getInstance( ExperiencedPlansService.class );
 		final Map<Id<Person>,Plan> experiencedPlans = experiencedPlansService.getExperiencedPlans();
 
-		for ( final Person person : inputPopulation.getPersons().values() ) {
+		for ( final Person person : scenario.getPopulation().getPersons().values() ) {
 			final Plan plan = experiencedPlans.get( person.getId() );
 			if ( plan == null ) continue;
 			for ( Plan toRemove : new ArrayList<>( person.getPlans() ) ) person.removePlan( toRemove );

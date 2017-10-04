@@ -1,17 +1,16 @@
 package ch.ethz.ivt.sccer.planfeatures;
 
-import org.matsim.api.core.v01.population.HasPlansAndId;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.utils.io.IOUtils;
+import org.matsim.core.utils.misc.Counter;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.DoubleFunction;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
@@ -33,6 +32,7 @@ public class PlanFeatureExtractor {
 	}
 
 	public void writeFeatures( Population population , String file ) {
+		final Counter counter = new Counter( "Extract features for agent # " , " / "+population.getPersons().size() );
 		try ( BufferedWriter writer = IOUtils.getBufferedWriter( file ) ) {
 			writer.write( "agentId" );
 			for ( Feature f : features ) {
@@ -40,12 +40,14 @@ public class PlanFeatureExtractor {
 			}
 
 			for ( Person person : population.getPersons().values() ) {
+				counter.incCounter();
 				final Plan plan = person.getSelectedPlan();
 
 				writer.newLine();
 				writer.write( person.getId().toString() );
 				for ( Feature feature : features ) writer.write( "\t"+feature.function.apply( plan ) );
 			}
+			counter.printCounter();
 		}
 		catch ( IOException e ) {
 			throw new UncheckedIOException( e );
