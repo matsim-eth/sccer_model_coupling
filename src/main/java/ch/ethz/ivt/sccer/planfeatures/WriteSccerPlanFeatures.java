@@ -1,5 +1,6 @@
 package ch.ethz.ivt.sccer.planfeatures;
 
+import ch.ethz.ivt.sccer.experiencedplans.ExperiencedPlansCreator;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.population.io.PopulationReader;
@@ -11,10 +12,13 @@ import org.matsim.core.scenario.ScenarioUtils;
 public class WriteSccerPlanFeatures {
 	public static void main( final String... args ) {
 		final String populationFile = args[ 0 ];
-		final String outputFile = args[ 1 ];
+		final String eventsFile = args[ 1 ];
+		final String outputFile = args[ 2 ];
 
 		final Scenario scenario = ScenarioUtils.createScenario( ConfigUtils.createConfig() );
 		new PopulationReader( scenario ).readFile( populationFile );
+
+		ExperiencedPlansCreator.replacePlansByExperiencedPlans( scenario.getPopulation() , eventsFile );
 
 		new PlanFeatureExtractor()
 				.withFeature(
