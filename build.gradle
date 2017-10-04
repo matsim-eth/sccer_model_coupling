@@ -2,6 +2,7 @@ group 'ch.ethz.matsim'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'distribution'
 
 sourceCompatibility = 1.8
 
@@ -18,4 +19,8 @@ repositories {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile group: 'org.matsim', name: 'matsim', version: '0.10.0-eth'
+}
+
+distributions {
+    custom {}
 }
