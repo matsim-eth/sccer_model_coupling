@@ -43,7 +43,7 @@ public class WriteSccerPlanFeatures {
 						"longest_trip_m",
 						Features::longestCarTrip_m )
 				.withFeature(
-						"total_stop_m",
+						"total_stop_s",
 						Features::totalStopTimeBetweenCarTrips )
 				.withFeature(
 						"total_trip_m",

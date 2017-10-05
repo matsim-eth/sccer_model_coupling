@@ -31,8 +31,7 @@ public class Features {
 	public static double totalStopTimeBetweenCarTrips( Plan plan ) {
 		return getCarStops( plan ).stream()
 				.mapToDouble( Stop::getDuration )
-				.max()
-				.orElse( 24 * 3600 );
+				.sum();
 	}
 
 	private static List<Stop> getCarStops( Plan plan ) {
