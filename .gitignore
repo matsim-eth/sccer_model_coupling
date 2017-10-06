@@ -2,3 +2,4 @@
 __pycache__/
 *.gz
 *.iml
+.ipynb_checkpoints/
