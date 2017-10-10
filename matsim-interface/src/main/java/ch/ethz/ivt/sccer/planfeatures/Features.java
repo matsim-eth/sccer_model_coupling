@@ -18,6 +18,15 @@ public class Features {
 				.orElse( -1 );
 	}
 
+	// different name in order to be able to use method references
+	public static double longestStopTimeBetweenCarTripsInRange( Plan plan , double start_time_h , double end_time_h ) {
+		return getCarStops( plan ).stream()
+				.filter( s -> s.start > start_time_h * 3600 && s.end < end_time_h * 3600 )
+				.mapToDouble( Stop::getDuration )
+				.max()
+				.orElse( -1 );
+	}
+
 	public static double longestCarTrip_m( Plan plan ) {
 		return plan.getPlanElements().stream()
 				.filter( pe -> pe instanceof Leg )
