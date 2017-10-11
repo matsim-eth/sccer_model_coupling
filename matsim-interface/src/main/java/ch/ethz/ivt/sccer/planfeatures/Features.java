@@ -21,10 +21,21 @@ public class Features {
 	// different name in order to be able to use method references
 	public static double longestStopTimeBetweenCarTripsInRange( Plan plan , double start_time_h , double end_time_h ) {
 		return getCarStops( plan ).stream()
-				.filter( s -> s.start > start_time_h * 3600 && s.end < end_time_h * 3600 )
-				.mapToDouble( Stop::getDuration )
+				.filter( s -> isInRange( s , start_time_h * 360 , end_time_h * 3600 ) )
+				.mapToDouble( s -> durationInRange( s , start_time_h * 3600 , end_time_h * 3600 ) )
 				.max()
 				.orElse( -1 );
+	}
+
+	private static boolean isInRange( Stop stop , double start_s , double end_s ) {
+		if ( stop.end < start_s ) return false;
+		return !(stop.start > end_s);
+	}
+
+	private static double durationInRange( Stop stop , double start_s , double end_s ) {
+		double stopStart = Math.max( start_s , stop.start );
+		double stopEnd = Math.min( end_s , stop.end );
+		return stopEnd - stopStart;
 	}
 
 	public static double longestCarTrip_m( Plan plan ) {
