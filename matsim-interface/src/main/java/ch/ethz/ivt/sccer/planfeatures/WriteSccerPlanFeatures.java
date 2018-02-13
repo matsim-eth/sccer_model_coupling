@@ -23,7 +23,7 @@ public class WriteSccerPlanFeatures {
 		final String eventsFile = args[ 2 ];
 		final String outputFile = args[ 3 ];
 
-		if ( new File( outputFile ).exists() ) throw new RuntimeException( "file "+outputFile+" exists." );
+		//if ( new File( outputFile ).exists() ) throw new RuntimeException( "file "+outputFile+" exists." );
 
 		log.info( "Read population" );
 		final Scenario scenario = ScenarioUtils.createScenario( ConfigUtils.createConfig() );
