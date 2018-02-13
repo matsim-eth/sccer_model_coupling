@@ -8,3 +8,4 @@ sccer-venv/
 data/10_interim/
 data/20_final/
 *.egg-info
+targets/

@@ -4,7 +4,7 @@ MAKE_DIR = $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # Java paths
 JAVA_RELEASE_DIR = $(MAKE_DIR)/.release
-JAVA_RUN = java -Xmx4g -cp "$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/*:$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/libs/*"
+JAVA_RUN = java -Xmx7g -cp "$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/*:$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/libs/*"
 
 # Python paths
 VENV_DIR = $(MAKE_DIR)/sccer-venv/
