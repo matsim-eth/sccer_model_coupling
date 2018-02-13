@@ -40,7 +40,7 @@ targets/python_dependencies: targets/venv | targets
 	$(PIP) install -e $(MAKE_DIR)/python-analysis/src/
 	touch targets/python_dependencies
 
-java_utils:
+java_utils: matsim-interface
 	cd matsim-interface/; \
 	mvn assembly:assembly -DskipTests=true; \
 	unzip -u -o target/sccer_model_coupling-0.0.1-SNAPSHOT-release.zip -d $(JAVA_RELEASE_DIR)
@@ -50,11 +50,6 @@ requirements.txt:
 
 targets:
 	mkdir targets
-
-# convenience: load necessary modules for euler.
-setup_euler:
-	module load java/1.8.0_31
-	module load python/3.6.1
 
 #####################################################################################
 # Data processing
