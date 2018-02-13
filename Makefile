@@ -18,6 +18,8 @@ INTERIM_DIR = $(DATA_DIR)/10_interim/
 FINAL_DIR = $(DATA_DIR)/20_final/
 
 ####################################################################################
+.PHONY: python_dependencies java_utils setup_euler clean all
+
 all: targets/features
 
 clean:
@@ -29,12 +31,14 @@ clean:
 #####################################################################################
 # Build, setup
 #####################################################################################
-venv:
+targets/venv: | targets
 	virtualenv -p python3.5 $(VENV_DIR)
+	touch targets/venv
 
-python_dependencies:
+targets/python_dependencies: targets/venv | targets
 	$(PIP) install -r requirement.txt
 	$(PIP) install -e $(MAKE_DIR)/python-analysis/src/
+	touch targets/python_dependencies
 
 java_utils:
 	cd matsim-interface/; \
@@ -44,13 +48,18 @@ java_utils:
 requirements.txt:
 	$(PIP) freeze > requirements.txt
 
-dirs:
+targets:
 	mkdir targets
+
+# convenience: load necessary modules for euler.
+setup_euler:
+	module load java/1.8.0_31
+	module load python/3.6.1
 
 #####################################################################################
 # Data processing
 #####################################################################################
 
-targets/features: java_utils | dirs
+targets/features: java_utils | targets
 	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/output_population.xml.gz $(RAW_DIR)/output_network.xml.gz $(RAW_DIR)/10.events.xml.gz $(INTERIM_DIR)/features.txt
 	touch targets/features
