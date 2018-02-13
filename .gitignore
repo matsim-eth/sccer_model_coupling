@@ -3,3 +3,8 @@ __pycache__/
 *.gz
 *.iml
 .ipynb_checkpoints/
+sccer-venv/
+.release/
+data/10_interim/
+data/20_final/
+*.egg-info
