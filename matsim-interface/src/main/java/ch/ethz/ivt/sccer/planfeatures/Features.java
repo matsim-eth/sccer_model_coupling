@@ -1,8 +1,10 @@
 package ch.ethz.ivt.sccer.planfeatures;
 
+import org.matsim.api.core.v01.population.Activity;
 import org.matsim.api.core.v01.population.Leg;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.core.router.TripStructureUtils;
+import org.matsim.core.utils.misc.Time;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +82,14 @@ public class Features {
 				.filter( l -> l.getMode().equals( "car" ) )
 				.mapToDouble( l -> l.getRoute().getDistance() )
 				.sum();
+	}
+
+	public static String isCarParkedInInterval( Plan plan , double start_s , double end_s ) {
+		return ""+plan.getPlanElements().stream()
+				.filter( pe -> pe instanceof Activity )
+				.map( pe -> (Activity) pe )
+				.anyMatch( a -> (a.getStartTime() == Time.UNDEFINED_TIME || a.getStartTime() < end_s) &&
+						(a.getEndTime() == Time.UNDEFINED_TIME || a.getEndTime() > start_s ) );
 	}
 
 	private static class Stop {

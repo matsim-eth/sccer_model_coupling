@@ -1,8 +1,10 @@
 package ch.ethz.ivt.sccer.planfeatures;
 
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.api.core.v01.population.Population;
+import org.matsim.core.utils.collections.Tuple;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.core.utils.misc.Counter;
 
@@ -18,10 +20,18 @@ import java.util.function.ToDoubleFunction;
  * @author thibautd
  */
 public class PlanFeatureExtractor {
+	private static final Logger log = Logger.getLogger( PlanFeatureExtractor.class );
 	private final List<Feature> features = new ArrayList<>();
 
 	public PlanFeatureExtractor withFeature( String name , Function<Plan,String> function ) {
 		features.add( new Feature( name , function ) );
+		return this;
+	}
+
+	public PlanFeatureExtractor withFeatures( Iterable<Tuple<String,Function<Plan,String>>> nameAndFeatures ) {
+		for ( Tuple<String,Function<Plan,String>> tuple : nameAndFeatures ) {
+			features.add( new Feature( tuple.getFirst() , tuple.getSecond() ) );
+		}
 		return this;
 	}
 
@@ -32,6 +42,8 @@ public class PlanFeatureExtractor {
 	}
 
 	public void writeFeatures( Population population , String file ) {
+		log.info( "Extract features in file "+file );
+		log.info( "Extract the following features: "+features.stream().map( f -> f.name ).reduce( "" , (s1,s2) -> s1+", "+s2 ) );
 		final Counter counter = new Counter( "Extract features for agent # " , " / "+population.getPersons().size() );
 		try ( BufferedWriter writer = IOUtils.getBufferedWriter( file ) ) {
 			writer.write( "agentId" );

@@ -8,14 +8,19 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.io.MatsimNetworkReader;
 import org.matsim.core.population.io.PopulationReader;
 import org.matsim.core.scenario.ScenarioUtils;
+import org.matsim.core.utils.collections.Tuple;
 
 import java.io.File;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 /**
  * @author thibautd
  */
 public class WriteSccerPlanFeatures {
 	private static final Logger log = Logger.getLogger( WriteSccerPlanFeatures.class );
+	private static final double TIME_STEP = 15 * 60;
 
 	public static void main( final String... args ) {
 		final String populationFile = args[ 0 ];
@@ -52,6 +57,13 @@ public class WriteSccerPlanFeatures {
 				.withFeature(
 						"total_trip_m",
 						Features::totalCarTraveledDistance_m )
+				.withFeatures(
+						DoubleStream.iterate( 0 , d -> d + TIME_STEP )
+								.limit( (int) (24 * 3600 / TIME_STEP) )
+								.mapToObj( d -> new Tuple<String,Function<Plan,String>>(
+										"["+d+";"+(d + TIME_STEP)+"]",
+										p -> Features.isCarParkedInInterval( p , d , d + TIME_STEP )) )
+								.collect( Collectors.toList() ) )
 				.writeFeatures(
 						scenario.getPopulation(),
 						outputFile );
