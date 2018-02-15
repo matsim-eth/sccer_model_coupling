@@ -6,6 +6,8 @@ MAKE_DIR = $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 JAVA_RELEASE_DIR = $(MAKE_DIR)/.release
 JAVA_RUN = java -Xmx7g -cp "$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/*:$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/libs/*"
 
+JAVA_FILES = $(find $(MAKE_DIR)/matsim-interface/src/ -name '*.java')
+
 # Python paths
 VENV_DIR = $(MAKE_DIR)/sccer-venv/
 PIP = $(VENV_DIR)/bin/pip
@@ -20,7 +22,7 @@ FINAL_DIR = $(DATA_DIR)/20_final/
 ####################################################################################
 .PHONY: python_dependencies java_utils setup_euler clean all
 
-all: targets/features
+all: targets/stem_classes
 
 clean:
 	rm -r targets
@@ -36,17 +38,18 @@ targets/venv: | targets
 	touch targets/venv
 
 targets/python_dependencies: targets/venv | targets
-	$(PIP) install -r requirement.txt
+	$(PIP) install -r requirements.txt
 	$(PIP) install -e $(MAKE_DIR)/python-analysis/src/
 	touch targets/python_dependencies
 
-java_utils: matsim-interface
+targets/java_utils: $(JAVA_FILES) | targets
 	cd matsim-interface/; \
 	mvn assembly:assembly -DskipTests=true; \
 	unzip -u -o target/sccer_model_coupling-0.0.1-SNAPSHOT-release.zip -d $(JAVA_RELEASE_DIR)
+	touch targets/java_utils
 
 requirements.txt:
-	$(PIP) freeze > requirements.txt
+	$(PIP) freeze | grep -v '^-e ' > requirements.txt
 
 targets:
 	mkdir targets
@@ -55,6 +58,10 @@ targets:
 # Data processing
 #####################################################################################
 
-targets/features: java_utils | targets
+targets/features: targets/java_utils | targets
 	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/output_population.xml.gz $(RAW_DIR)/output_network.xml.gz $(RAW_DIR)/10.events.xml.gz $(INTERIM_DIR)/features.txt
 	touch targets/features
+
+targets/stem_classes: targets/features targets/python_dependencies | targets
+	$(PYTHON) python-analysis/src/run/002_activity_patterns_with_park_time.py -i $(INTERIM_DIR)/features.txt -o $(FINAL_DIR)/002_clusters.csv -f $(FINAL_DIR)/002_parktimes_per_cluster.pdf
+	touch targets/stem_classes

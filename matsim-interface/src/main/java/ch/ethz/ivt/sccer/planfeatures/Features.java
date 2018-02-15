@@ -8,6 +8,8 @@ import org.matsim.core.utils.misc.Time;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.ToDoubleFunction;
+import java.util.stream.DoubleStream;
 
 /**
  * @author thibautd
@@ -84,12 +86,28 @@ public class Features {
 				.sum();
 	}
 
-	public static String isCarParkedInInterval( Plan plan , double start_s , double end_s ) {
-		return ""+plan.getPlanElements().stream()
-				.filter( pe -> pe instanceof Activity )
-				.map( pe -> (Activity) pe )
-				.anyMatch( a -> (a.getStartTime() == Time.UNDEFINED_TIME || a.getStartTime() < end_s) &&
-						(a.getEndTime() == Time.UNDEFINED_TIME || a.getEndTime() > start_s ) );
+	public static double parkTimeInInterval( Plan plan , double start_s , double end_s ) {
+		if ( start_s > end_s ) throw new IllegalArgumentException();
+		double driveTime = plan.getPlanElements().stream()
+				.filter( pe -> pe instanceof Leg )
+				.map( pe -> (Leg) pe )
+				.filter( l -> l.getMode().equals( "car" ) )
+				.mapToDouble( l -> parkTimeInInterval( l , start_s , end_s ) )
+				.sum();
+		return end_s - start_s - driveTime;
+	}
+
+	public static ToDoubleFunction<Plan> parkTimeInInterval( final double start_s , final double end_s ) {
+		return p -> parkTimeInInterval( p , start_s , end_s );
+	}
+
+	private static double parkTimeInInterval( Leg leg , double start_s , double end_s ) {
+		double dep = leg.getDepartureTime();
+		double arr = leg.getDepartureTime() + leg.getTravelTime();
+
+		if ( dep > end_s ) return 0;
+		if ( arr < start_s ) return 0;
+		return Math.min( arr , end_s ) - Math.max( dep , start_s );
 	}
 
 	private static class Stop {

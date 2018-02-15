@@ -41,30 +41,31 @@ public class WriteSccerPlanFeatures {
 		ExperiencedPlansCreator.replacePlansByExperiencedPlans( scenario , eventsFile );
 
 		log.info( "Extract features" );
-		new PlanFeatureExtractor()
-				.withFeature(
-						"longest_stop_s",
-						Features::longestStopTimeBetweenCarTrips )
-				.withFeature(
-						"longest_stop_9_16_s",
-						(Plan p) -> Features.longestStopTimeBetweenCarTripsInRange( p , 9 , 16 ) )
-				.withFeature(
-						"longest_trip_m",
-						Features::longestCarTrip_m )
-				.withFeature(
-						"total_stop_s",
-						Features::totalStopTimeBetweenCarTrips )
-				.withFeature(
-						"total_trip_m",
-						Features::totalCarTraveledDistance_m )
-				.withFeatures(
-						DoubleStream.iterate( 0 , d -> d + TIME_STEP )
-								.limit( (int) (24 * 3600 / TIME_STEP) )
-								.mapToObj( d -> new Tuple<String,Function<Plan,String>>(
-										"["+d+";"+(d + TIME_STEP)+"]",
-										p -> Features.isCarParkedInInterval( p , d , d + TIME_STEP )) )
-								.collect( Collectors.toList() ) )
-				.writeFeatures(
+		PlanFeatureExtractor extractor =
+				new PlanFeatureExtractor()
+						.withFeature(
+								"longest_stop_s",
+								Features::longestStopTimeBetweenCarTrips )
+						.withFeature(
+								"longest_stop_9_16_s",
+								(Plan p) -> Features.longestStopTimeBetweenCarTripsInRange( p , 9 , 16 ) )
+						.withFeature(
+								"longest_trip_m",
+								Features::longestCarTrip_m )
+						.withFeature(
+								"total_stop_s",
+								Features::totalStopTimeBetweenCarTrips )
+						.withFeature(
+								"total_trip_m",
+								Features::totalCarTraveledDistance_m );
+
+		for ( double s=0; s < 24 * 3600; s += TIME_STEP ) {
+			extractor.withFeature(
+					"parked_s_["+s+";"+(s+TIME_STEP)+"]",
+					Features.parkTimeInInterval( s , s + TIME_STEP ));
+		}
+
+		extractor.writeFeatures(
 						scenario.getPopulation(),
 						outputFile );
 	}

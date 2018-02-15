@@ -28,13 +28,6 @@ public class PlanFeatureExtractor {
 		return this;
 	}
 
-	public PlanFeatureExtractor withFeatures( Iterable<Tuple<String,Function<Plan,String>>> nameAndFeatures ) {
-		for ( Tuple<String,Function<Plan,String>> tuple : nameAndFeatures ) {
-			features.add( new Feature( tuple.getFirst() , tuple.getSecond() ) );
-		}
-		return this;
-	}
-
 	public PlanFeatureExtractor withFeature( String name , ToDoubleFunction<Plan> function ) {
 		return withFeature(
 				name,
