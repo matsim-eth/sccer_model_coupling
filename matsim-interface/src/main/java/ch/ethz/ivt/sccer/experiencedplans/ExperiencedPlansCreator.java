@@ -30,15 +30,16 @@ public class ExperiencedPlansCreator {
 			final Scenario scenario,
 			final String eventsFile ) {
 
-		com.google.inject.Injector injector = Injector.createInjector(scenario.getConfig(),
-				new ScenarioByInstanceModule(scenario),
-				new ExperiencedPlansModule(),
-				new CharyparNagelScoringFunctionModule(),
-				new EventsManagerModule(),
-				new ReplayEvents.Module());
+		ExperiencedPlansService experiencedPlansService =
+				ReplayEvents.run(scenario.getConfig(),
+						eventsFile,
+						new ScenarioByInstanceModule(scenario),
+						new ExperiencedPlansModule(),
+						new CharyparNagelScoringFunctionModule(),
+						new EventsManagerModule(),
+						new ReplayEvents.Module()).get(
+								ExperiencedPlansService.class );
 
-		injector.getInstance(ReplayEvents.class).playEventsFile( eventsFile, 1);
-		ExperiencedPlansService experiencedPlansService = injector.getInstance( ExperiencedPlansService.class );
 		final Map<Id<Person>,Plan> experiencedPlans = experiencedPlansService.getExperiencedPlans();
 
 		for ( final Person person : scenario.getPopulation().getPersons().values() ) {

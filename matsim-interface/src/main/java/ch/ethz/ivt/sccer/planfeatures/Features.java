@@ -1,15 +1,12 @@
 package ch.ethz.ivt.sccer.planfeatures;
 
-import org.matsim.api.core.v01.population.Activity;
 import org.matsim.api.core.v01.population.Leg;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.core.router.TripStructureUtils;
-import org.matsim.core.utils.misc.Time;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.ToDoubleFunction;
-import java.util.stream.DoubleStream;
 
 /**
  * @author thibautd
