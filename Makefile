@@ -60,8 +60,8 @@ targets:
 
 targets/features: targets/java_utils | targets
 	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/output_population.xml.gz $(RAW_DIR)/output_network.xml.gz $(RAW_DIR)/10.events.xml.gz $(INTERIM_DIR)/features.txt
-	touch targets/features
+	touch $@
 
 targets/stem_classes: targets/features targets/python_dependencies | targets
 	$(PYTHON) python-analysis/src/run/002_activity_patterns_with_park_time.py -i $(INTERIM_DIR)/features.txt -o $(FINAL_DIR)/002_clusters.csv -f $(FINAL_DIR)/002_parktimes_per_cluster.pdf
-	touch targets/stem_classes
+	touch $@

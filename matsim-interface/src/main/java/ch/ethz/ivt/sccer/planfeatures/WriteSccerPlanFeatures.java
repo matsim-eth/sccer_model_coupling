@@ -1,19 +1,23 @@
 package ch.ethz.ivt.sccer.planfeatures;
 
-import ch.ethz.ivt.sccer.experiencedplans.ExperiencedPlansCreator;
 import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.core.config.ConfigUtils;
+import org.matsim.core.controler.ReplayEvents;
+import org.matsim.core.events.EventsManagerModule;
 import org.matsim.core.network.io.MatsimNetworkReader;
 import org.matsim.core.population.io.PopulationReader;
+import org.matsim.core.scenario.ScenarioByInstanceModule;
 import org.matsim.core.scenario.ScenarioUtils;
-import org.matsim.core.utils.collections.Tuple;
+import org.matsim.core.scoring.ExperiencedPlansModule;
+import org.matsim.core.scoring.ExperiencedPlansService;
+import org.matsim.core.scoring.functions.CharyparNagelScoringFunctionModule;
 
-import java.io.File;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * @author thibautd
@@ -38,7 +42,7 @@ public class WriteSccerPlanFeatures {
 		new MatsimNetworkReader( scenario.getNetwork() ).readFile( networkFile );
 
 		log.info( "Extract experienced plans" );
-		ExperiencedPlansCreator.replacePlansByExperiencedPlans( scenario , eventsFile );
+		final ReplayEvents.Results results = replacePlansByExperiencedPlans(scenario, eventsFile);
 
 		log.info( "Extract features" );
 		PlanFeatureExtractor extractor =
@@ -59,14 +63,47 @@ public class WriteSccerPlanFeatures {
 								"total_trip_m",
 								Features::totalCarTraveledDistance_m );
 
+		final TravelDistanceEventHandler distances = results.get(TravelDistanceEventHandler.class);
 		for ( double s=0; s < 24 * 3600; s += TIME_STEP ) {
 			extractor.withFeature(
 					"parked_s_["+s+";"+(s+TIME_STEP)+"]",
 					Features.parkTimeInInterval( s , s + TIME_STEP ));
+			extractor.withFeature(
+					"distance_m_["+s+";"+(s+TIME_STEP)+"]",
+					distances.distanceFeature( s , s + TIME_STEP ));
 		}
 
 		extractor.writeFeatures(
 						scenario.getPopulation(),
 						outputFile );
+	}
+
+	public static ReplayEvents.Results replacePlansByExperiencedPlans(
+			final Scenario scenario,
+			final String eventsFile ) {
+
+		final ReplayEvents.Results replay =
+				ReplayEvents.run(scenario.getConfig(),
+						eventsFile,
+						new ScenarioByInstanceModule(scenario),
+						new ExperiencedPlansModule(),
+						new CharyparNagelScoringFunctionModule(),
+						new EventsManagerModule(),
+						new ReplayEvents.Module(),
+						new TravelDistanceEventHandler.Module());
+
+		ExperiencedPlansService experiencedPlansService = replay.get( ExperiencedPlansService.class );
+
+		final Map<Id<Person>,Plan> experiencedPlans = experiencedPlansService.getExperiencedPlans();
+
+		for ( final Person person : scenario.getPopulation().getPersons().values() ) {
+			final Plan plan = experiencedPlans.get( person.getId() );
+			if ( plan == null ) continue;
+			for ( Plan toRemove : new ArrayList<>( person.getPlans() ) ) person.removePlan( toRemove );
+			person.addPlan( plan );
+			person.setSelectedPlan( plan );
+		}
+
+		return replay;
 	}
 }
