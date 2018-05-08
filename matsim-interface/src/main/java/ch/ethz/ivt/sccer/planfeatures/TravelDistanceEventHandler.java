@@ -117,10 +117,17 @@ public class TravelDistanceEventHandler implements
 		private void start(double time) {
 			if (onLink) throw new IllegalStateException();
 			if (time >= currentStart + binSize) {
-				currentStart = (time % binSize) * binSize;
+				 moveTo(((int) (time / binSize)) * binSize);
 			}
 			enterLinkTime = time;
 			onLink = true;
+		}
+
+		private void moveTo(double time) {
+			binStartTimes.add(currentStart);
+			distances.add(currentDistance);
+			currentStart = time;
+			currentDistance = 0;
 		}
 
 		private void end(double time, double distance) {
@@ -138,11 +145,9 @@ public class TravelDistanceEventHandler implements
 
 				// add distance and record
 				currentDistance += inBinFraction * distance;
-				binStartTimes.add(currentStart);
-				distances.add(currentDistance);
+				moveTo(binEnd);
 
 				// move forward
-				currentStart = binEnd;
 				currentDistance = (1 - inBinFraction) * distance;
 			}
 

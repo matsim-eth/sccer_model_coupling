@@ -12,6 +12,8 @@ JAVA_FILES = $(find $(MAKE_DIR)/matsim-interface/src/ -name '*.java')
 VENV_DIR = $(MAKE_DIR)/sccer-venv/
 PIP = $(VENV_DIR)/bin/pip
 PYTHON = $(VENV_DIR)/bin/python3.5
+JUPYTER = $(VENV_DIR)/bin/jupyter
+RUN_NOTEBOOK = $(JUPYTER) nbconvert --ExecutePreprocessor.timeout=-1 --inplace --to notebook --execute
 
 # Data paths
 DATA_DIR = $(MAKE_DIR)/data/
@@ -21,6 +23,9 @@ FINAL_DIR = $(DATA_DIR)/20_final/
 
 ####################################################################################
 .PHONY: python_dependencies java_utils setup_euler clean all
+
+start_notebook: targets/python_dependencies all
+	$(JUPYTER) notebook
 
 all: targets/stem_classes
 
