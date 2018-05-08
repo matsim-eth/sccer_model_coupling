@@ -10,6 +10,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
+import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.events.algorithms.Vehicle2DriverEventHandler;
 
@@ -25,18 +26,24 @@ public class TravelDistanceEventHandler implements
 		LinkEnterEventHandler, LinkLeaveEventHandler,
 		VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler {
 	private final Vehicle2DriverEventHandler vehicle2Driver = new Vehicle2DriverEventHandler();
+	private final Population population;
 	private final Network network;
 	private final Map<Id<Person>,PersonRecord> records = new HashMap<>();
+
+	// TODO make configurable
+	private final double binSize = 15 * 60;
 
 	public static class Module extends AbstractModule {
 		@Override
 		public void install() {
+			bind(TravelDistanceEventHandler.class).asEagerSingleton();
 			addEventHandlerBinding().to(TravelDistanceEventHandler.class);
 		}
 	}
 
 	@Inject
-	public TravelDistanceEventHandler(Network network) {
+	public TravelDistanceEventHandler(Population population, Network network) {
+		this.population = population;
 		this.network = network;
 	}
 
@@ -51,6 +58,7 @@ public class TravelDistanceEventHandler implements
 	@Override
 	public void handleEvent(LinkEnterEvent event) {
 		final Id<Person> person = vehicle2Driver.getDriverOfVehicle(event.getVehicleId());
+		if (!population.getPersons().containsKey(person)) return;
 		final PersonRecord record = records.computeIfAbsent(person, PersonRecord::new);
 		record.start(event.getTime());
 	}
@@ -58,6 +66,7 @@ public class TravelDistanceEventHandler implements
 	@Override
 	public void handleEvent(LinkLeaveEvent event) {
 		final Id<Person> person = vehicle2Driver.getDriverOfVehicle(event.getVehicleId());
+		if (!population.getPersons().containsKey(person)) return;
 		final PersonRecord record = records.computeIfAbsent(person, PersonRecord::new);
 		final double length = getLength(event.getLinkId());
 		record.end(event.getTime(), length);
@@ -70,6 +79,7 @@ public class TravelDistanceEventHandler implements
 
 	@Override
 	public void handleEvent(VehicleEntersTrafficEvent event) {
+		if (!population.getPersons().containsKey(event.getPersonId())) return;
 		vehicle2Driver.handleEvent(event);
 
 		final PersonRecord record = records.computeIfAbsent(event.getPersonId(), PersonRecord::new);
@@ -78,6 +88,7 @@ public class TravelDistanceEventHandler implements
 
 	@Override
 	public void handleEvent(VehicleLeavesTrafficEvent event) {
+		if (!population.getPersons().containsKey(event.getPersonId())) return;
 		vehicle2Driver.handleEvent(event);
 
 		final PersonRecord record = records.computeIfAbsent(event.getPersonId(), PersonRecord::new);
@@ -89,12 +100,15 @@ public class TravelDistanceEventHandler implements
 		return network.getLinks().get(linkId).getLength();
 	}
 
-	public static class PersonRecord {
+	public class PersonRecord {
 		private final Id<Person> id;
-		private TDoubleList enterTimes = new TDoubleArrayList();
-		private TDoubleList exitTimes = new TDoubleArrayList();
+		private TDoubleList binStartTimes = new TDoubleArrayList();
 		private TDoubleList distances = new TDoubleArrayList();
+
 		private boolean onLink = false;
+		private double currentStart = -1;
+		private double enterLinkTime = -1;
+		private double currentDistance = 0;
 
 		private PersonRecord(Id<Person> id) {
 			this.id = id;
@@ -102,35 +116,46 @@ public class TravelDistanceEventHandler implements
 
 		private void start(double time) {
 			if (onLink) throw new IllegalStateException();
-			enterTimes.add(time);
+			if (time >= currentStart + binSize) {
+				currentStart = (time % binSize) * binSize;
+			}
+			enterLinkTime = time;
 			onLink = true;
 		}
 
 		private void end(double time, double distance) {
 			if (!onLink) throw new IllegalStateException();
-			exitTimes.add(time);
-			distances.add(distance);
+
+			final double binEnd = currentStart + binSize;
+
+			if (time < binEnd) {
+				// in same time bin
+				currentDistance += distance;
+			}
+			else {
+				// changing time bin: need to do some magic there
+				final double inBinFraction = (binEnd - enterLinkTime) / binSize;
+
+				// add distance and record
+				currentDistance += inBinFraction * distance;
+				binStartTimes.add(currentStart);
+				distances.add(currentDistance);
+
+				// move forward
+				currentStart = binEnd;
+				currentDistance = (1 - inBinFraction) * distance;
+			}
+
 			onLink = false;
 		}
 
 		public double calcTraveledDistance(double start, double end) {
-			final int startBinaryResult = enterTimes.binarySearch(start);
-			final int endBinaryResult = exitTimes.binarySearch(end);
+			// TODO this should be relaxed or the interface changed
+			if (end - start != binSize) throw new IllegalArgumentException();
 
-			final int startIndex = startBinaryResult >= 0 ? startBinaryResult : -startBinaryResult - 1;
-			final int endIndex = endBinaryResult >= 0 ? endBinaryResult : -endBinaryResult - 1;
+			final int index = binStartTimes.binarySearch(start);
 
-			// fraction of the first and last distance to consider: consider constant speed
-			final double startFraction = (exitTimes.get(startIndex) - start) / (exitTimes.get(startIndex) - enterTimes.get(startIndex));
-			final double endFraction = (end - enterTimes.get(endIndex)) / (exitTimes.get(endIndex) - enterTimes.get(endIndex));
-
-			double distance = startFraction * distances.get(startIndex);
-
-			for (int i=startIndex + 1; i < endIndex; i++) distance += distances.get(i);
-
-			distance += endFraction * distances.get(endIndex);
-
-			return distance;
+			return index >= 0 ? distances.get(index) : 0;
 		}
 	}
 }
