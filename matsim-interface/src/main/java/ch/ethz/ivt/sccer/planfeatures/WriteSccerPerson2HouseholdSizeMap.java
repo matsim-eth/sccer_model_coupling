@@ -34,29 +34,20 @@ public class WriteSccerPerson2HouseholdSizeMap {
         log.info( "Read households" );
         new HouseholdsReaderV10( scenario.getHouseholds() ).readFile( householdsFile );
 
-        log.info( "Map household size to person ids" );
-        Map<Id<Person>, Integer> persons2householdSize = new HashMap<>();
-        for (Household household : scenario.getHouseholds().getHouseholds().values()) {
-            for (Id<Person> personId : household.getMemberIds()) {
-                if ( persons2householdSize.containsKey(personId) ) {
-                    log.warn("Person already assigned to household...?");
-                }
-
-                persons2householdSize.put(personId, household.getMemberIds().size());
-            }
-        }
-
         log.info( "Write to file : " + outputFile );
         final Counter counter = new Counter( "Extract features for agent # " , " / " + scenario.getPopulation().getPersons().size() );
         try ( BufferedWriter writer = IOUtils.getBufferedWriter( outputFile ) ) {
             writer.write( "agentId" + "\t" + "householdSize");
 
-            for ( Map.Entry<Id<Person>, Integer> entry : persons2householdSize.entrySet() ) {
-                counter.incCounter();
-                writer.newLine();
-                writer.write(entry.getKey().toString());
-                writer.write("\t");
-                writer.write(Integer.toString(entry.getValue()));
+            for (Household household : scenario.getHouseholds().getHouseholds().values()) {
+                final String householdSize = ""+household.getMemberIds().size();
+                for (Id<Person> personId : household.getMemberIds()) {
+                    counter.incCounter();
+                    writer.newLine();
+                    writer.write(personId.toString());
+                    writer.write("\t");
+                    writer.write(householdSize);
+                }
             }
             counter.printCounter();
         }
