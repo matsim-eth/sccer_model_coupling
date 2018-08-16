@@ -37,16 +37,19 @@ public class WriteSccerPerson2HouseholdSizeMap {
         log.info( "Write to file : " + outputFile );
         final Counter counter = new Counter( "Extract features for agent # " , " / " + scenario.getPopulation().getPersons().size() );
         try ( BufferedWriter writer = IOUtils.getBufferedWriter( outputFile ) ) {
-            writer.write( "agentId" + "\t" + "householdSize");
+            writer.write( "agentId\thouseholdId\thouseholdSize\thouseholdIncome");
 
             for (Household household : scenario.getHouseholds().getHouseholds().values()) {
-                final String householdSize = ""+household.getMemberIds().size();
                 for (Id<Person> personId : household.getMemberIds()) {
                     counter.incCounter();
                     writer.newLine();
                     writer.write(personId.toString());
                     writer.write("\t");
-                    writer.write(householdSize);
+                    writer.write(household.getId().toString());
+                    writer.write("\t");
+                    writer.write(""+household.getMemberIds().size());
+                    writer.write("\t");
+                    writer.write(""+household.getIncome().getIncome());
                 }
             }
             counter.printCounter();
