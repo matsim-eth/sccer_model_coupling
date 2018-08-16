@@ -38,16 +38,16 @@ clean:
 #####################################################################################
 # Build, setup
 #####################################################################################
-targets/venv: | targets
+targets/venv:
 	virtualenv -p python3.5 $(VENV_DIR)
 	touch targets/venv
 
-targets/python_dependencies: targets/venv | targets
+targets/python_dependencies: targets/venv
 	$(PIP) install -r requirements.txt
 	$(PIP) install -e $(MAKE_DIR)/python-analysis/src/
 	touch targets/python_dependencies
 
-targets/java_utils: $(JAVA_FILES) | targets
+targets/java_utils: $(JAVA_FILES)
 	cd matsim-interface/; \
 	mvn assembly:assembly -DskipTests=true; \
 	unzip -u -o target/sccer_model_coupling-0.0.1-SNAPSHOT-release.zip -d $(JAVA_RELEASE_DIR)
@@ -56,21 +56,18 @@ targets/java_utils: $(JAVA_FILES) | targets
 requirements.txt:
 	$(PIP) freeze | grep -v '^-e ' > requirements.txt
 
-targets:
-	mkdir targets
-
 #####################################################################################
 # Data processing
 #####################################################################################
 
-targets/features: targets/java_utils | targets
+targets/features: targets/java_utils
 	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/output_population.xml.gz $(RAW_DIR)/output_network.xml.gz $(RAW_DIR)/10.events.xml.gz $(INTERIM_DIR)/features.txt
 	touch $@
 
-targets/household_features: targets/java_utils | targets
+targets/household_features: targets/java_utils
 	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures $(RAW_DIR)/output_population.xml.gz $(RAW_DIR)/output_households.xml.gz $(INTERIM_DIR)/household_features.txt
 	touch $@
 
-targets/stem_classes: targets/features targets/household_features targets/python_dependencies | targets
+targets/stem_classes: targets/features targets/household_features targets/python_dependencies
 	$(PYTHON) python-analysis/src/run/002_activity_patterns_with_park_time.py -i $(INTERIM_DIR)/features.txt -o $(FINAL_DIR)/002_clusters.csv -f $(FINAL_DIR)/002_parktimes_per_cluster.pdf
 	touch $@
