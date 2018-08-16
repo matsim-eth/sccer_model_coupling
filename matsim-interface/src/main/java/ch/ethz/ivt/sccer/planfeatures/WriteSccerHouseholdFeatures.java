@@ -15,11 +15,9 @@ import org.matsim.households.HouseholdsReaderV10;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.Map;
 
-public class WriteSccerPerson2HouseholdSizeMap {
-    private static final Logger log = Logger.getLogger( WriteSccerPerson2HouseholdSizeMap.class );
+public class WriteSccerHouseholdFeatures {
+    private static final Logger log = Logger.getLogger( WriteSccerHouseholdFeatures.class );
 
 
     public static void main(String[] args) {
