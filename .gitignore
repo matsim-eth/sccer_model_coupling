@@ -5,7 +5,10 @@ __pycache__/
 .ipynb_checkpoints/
 sccer-venv/
 .release/
-data/10_interim/
-data/20_final/
+data/10_interim/*
+!data/10_interim/.gitkeep
+data/20_final/*
+!data/20_final/.gitkeep
 *.egg-info
-targets/
+targets/*
+!targets/.gitkeep
