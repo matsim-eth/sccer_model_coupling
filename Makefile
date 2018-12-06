@@ -11,7 +11,7 @@ JAVA_FILES = $(find $(MAKE_DIR)/matsim-interface/src/ -name '*.java')
 # Python paths
 VENV_DIR = $(MAKE_DIR)/sccer-venv/
 PIP = $(VENV_DIR)/bin/pip
-PYTHON = $(VENV_DIR)/bin/python3.5
+PYTHON = $(VENV_DIR)/bin/python3.6
 JUPYTER = $(VENV_DIR)/bin/jupyter
 RUN_NOTEBOOK = $(JUPYTER) nbconvert --ExecutePreprocessor.timeout=-1 --inplace --to notebook --execute
 
@@ -22,12 +22,19 @@ INTERIM_DIR = $(DATA_DIR)/10_interim/
 FINAL_DIR = $(DATA_DIR)/20_final/
 
 ####################################################################################
-.PHONY: python_dependencies java_utils setup_euler clean all
+.PHONY: python_dependencies java_utils setup_euler clean all all_euler
+
+all: targets/stem_classes
 
 start_notebook: targets/python_dependencies all
 	$(JUPYTER) notebook
 
-all: targets/stem_classes
+# somehow did not manage to get access to outside world from compute nodes.
+# So on euler, need to first build python venv and java utils, and only then
+# submit job for the rest
+all_euler: targets/python_dependencies targets/java_utils
+	# TODO: check what bsub parameters make sense (or switch to snakemake to handle this better)
+	bsub -R "rusage[mem=7500]" make all
 
 clean:
 	rm -r targets
@@ -39,7 +46,7 @@ clean:
 # Build, setup
 #####################################################################################
 targets/venv:
-	virtualenv -p python3.5 $(VENV_DIR)
+	virtualenv -p python3.6 $(VENV_DIR)
 	touch targets/venv
 
 targets/python_dependencies: targets/venv

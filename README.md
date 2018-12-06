@@ -13,3 +13,15 @@ and submit a job containing a make task (eg bsub make target/smth).
 
 A special make target sets up all that needs to be setup to submit jobs on euler.
 
+## Running on Euler
+To run the computations on ETHZ's Euler Cluster, run
+
+```
+./setup_euler.sh
+make all_euler
+```
+
+simply submitting a `make` job unfortunately does not work properly, as the compilers (python and java) need access to the Internet,
+which I did not manage from the compute nodes.
+The "setup euler" stage could not be included in a make target either, because make targets are executed in a sub-shell
+and do not change the environment of later targets.
