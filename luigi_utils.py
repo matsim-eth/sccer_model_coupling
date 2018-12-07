@@ -1,5 +1,23 @@
 import time
 import os
+import luigi
+
+def files_in_dir(root_dir):
+    for root, dirs, files in os.walk(root_dir):
+        for file in files:
+            yield os.path.join(root, file)
+
+
+class MatchingFiles(luigi.ExternalTask):
+    """
+    A Task that represents all the files in a certain directory whose name match a pattern
+    """
+    root_dir = luigi.Parameter()
+    predicate = luigi.Parameter()
+
+    def output(self):
+        return [luigi.LocalTarget(f) for f in files_in_dir(self.root_dir) if self.predicate(f)]
+
 
 class MTimeMixin:
     """
@@ -19,13 +37,17 @@ class MTimeMixin:
                 return [obj]
 
         def mtime(path):
-            return time.ctime(os.path.getmtime(path))
+            #return time.ctime(os.path.getmtime(path))
+            return os.path.getmtime(path)
 
+        # Check if all outputs exist
         if not all(os.path.exists(out.path) for out in to_list(self.output())):
             return False
 
+        # "birth" of output: earliest created output file
         self_mtime = min(mtime(out.path) for out in to_list(self.output()))
 
+        # Check if input either incomplete or younger than output
         for el in to_list(self.requires()):
             if not el.complete():
                 return False

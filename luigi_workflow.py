@@ -1,32 +1,51 @@
 import os
+import shutil
 import luigi
 import luigi.contrib.external_program
-from plumbum.cmd import mvn
+from plumbum.cmd import mvn, unzip, rm
 from plumbum import local, FG
 
-from luigi_utils import MTimeMixin
+import luigi_utils as lu
 
-class JavaFiles(luigi.ExternalTask):
-    def output(self):
-        java_files = [luigi.LocalTarget(os.path.join('matsim-interface', 'pom.xml'))]
-        for root, dirs, files in os.walk("matsim-interface"):
-            for file in files:
-                if file.endswith(".java"):
-                    java_files.append(luigi.LocalTarget(os.path.join(root, file)))
-        return java_files
+###############################################################################
+# Config Options
+###############################################################################
 
-class JavaCompilationTask(MTimeMixin, luigi.Task):
+class java_settings(luigi.Config):
+    path = luigi.Parameter(default='matsim-interface')
+    release_dir = luigi.Parameter(default='.release')
+    release_name = luigi.Parameter(default='sccer_model_coupling-0.0.1-SNAPSHOT')
+    jvm_options = luigi.ListParameter(default=['-Xmx7g'])
+
+###############################################################################
+# Compilation of Java Classes
+###############################################################################
+
+class JavaCompilationTask(lu.MTimeMixin, luigi.Task):
     def requires(self):
         # This does not seem to work as Make, and does not re-run if the inputs are newer than output...
-        return JavaFiles()
+        return lu.MatchingFiles(java_settings().path,
+                    lambda f: f.endswith('pom.xml') or f.endswith(".java"))
 
     def run(self):
-        with local.cwd(local.cwd / 'matsim-interface'):
+        with local.cwd(local.cwd / java_settings().path):
             mvn['assembly:assembly', '-DskipTests=true'] & FG
 
-    def output(self):
-        # TODO: avoid having version number in there!
-        return luigi.LocalTarget(os.path.join('matsim-interface', 'target', 'sccer_model_coupling-0.0.1-SNAPSHOT-release.zip'))
+        shutil.rmtree(java_settings().release_dir)
 
-if __name__ == '__main__':
-    luigi.build([JavaCompilationTask()])
+        # TODO replace by python equivalent for portability
+        unzip['-u', '-o', os.path.join(java_settings().path, 'target', '%s-release.zip' % java_settings().release_name), '-d', java_settings().release_dir] & FG
+
+    def output(self):
+        d = java_settings().release_dir
+        #if (os.path.exists(d)):
+        #    # If release directory exists, return all files in it, so that it is rebuild only if java files are newer
+        #    # (date comparison does not work with directory, as in Make)
+        #    return [luigi.LocalTarget(f) for f in lu.files_in_dir(d)]
+
+        return luigi.LocalTarget(d)
+
+
+###############################################################################
+# Processing Tasks
+###############################################################################
