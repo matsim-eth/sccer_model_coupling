@@ -4,7 +4,7 @@ MAKE_DIR = $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # Java paths
 JAVA_RELEASE_DIR = $(MAKE_DIR)/.release
-JAVA_RUN = java -Xmx7g -cp "$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/*:$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/libs/*"
+JAVA_RUN = java -Xmx17g -cp "$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/*:$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/libs/*"
 
 JAVA_FILES = $(find $(MAKE_DIR)/matsim-interface/src/ -name '*.java')
 
@@ -68,11 +68,11 @@ requirements.txt:
 #####################################################################################
 
 targets/features: targets/java_utils
-	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/output_population.xml.gz $(RAW_DIR)/output_network.xml.gz $(RAW_DIR)/10.events.xml.gz $(INTERIM_DIR)/features.txt
+	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/switzerland_population.xml.gz $(RAW_DIR)/switzerland_network.xml.gz $(RAW_DIR)/output_events.xml.gz $(INTERIM_DIR)/features.txt
 	touch $@
 
 targets/household_features: targets/java_utils
-	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures $(RAW_DIR)/output_population.xml.gz $(RAW_DIR)/output_households.xml.gz $(INTERIM_DIR)/household_features.txt
+	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures $(RAW_DIR)/switzerland_population.xml.gz $(RAW_DIR)/switzerland_households.xml.gz $(INTERIM_DIR)/household_features.txt
 	touch $@
 
 targets/stem_classes: targets/features targets/household_features targets/python_dependencies
