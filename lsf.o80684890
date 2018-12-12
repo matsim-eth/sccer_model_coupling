@@ -1,0 +1,145 @@
+Sender: LSF System <lsfadmin@eu-ms-021-27>
+Subject: Job 80684890: <make all> in cluster <euler> Done
+
+Job <make all> was submitted from host <eu-login-16-ng> by user <tchervec> in cluster <euler> at Wed Dec 12 19:10:14 2018
+Job was executed on host(s) <eu-ms-021-27>, in queue <normal.4h>, as user <tchervec> in cluster <euler> at Wed Dec 12 19:10:26 2018
+</cluster/home/tchervec> was used as the home directory.
+</cluster/work/ivt_vpl/tchervec/sccer_model_coupling> was used as the working directory.
+Started at Wed Dec 12 19:10:26 2018
+Terminated at Wed Dec 12 19:10:56 2018
+Results reported at Wed Dec 12 19:10:56 2018
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+make all
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   4.10 sec.
+    Max Memory :                                 405 MB
+    Average Memory :                             54.00 MB
+    Total Requested Memory :                     7500.00 MB
+    Delta Memory :                               7095.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                5
+    Run time :                                   33 sec.
+    Turnaround time :                            42 sec.
+
+The output (if any) follows:
+
+make[1]: Entering directory `/cluster/work/ivt_vpl/tchervec/sccer_model_coupling'
+/cluster/work/ivt_vpl/tchervec/sccer_model_coupling//sccer-venv//bin/python3.6 python-analysis/src/run/002_activity_patterns_with_park_time.py -i /cluster/work/ivt_vpl/tchervec/sccer_model_coupling//data//10_interim//features.txt -o /cluster/work/ivt_vpl/tchervec/sccer_model_coupling//data//20_final//002_clusters.csv -f /cluster/work/ivt_vpl/tchervec/sccer_model_coupling//data//20_final//002_parktimes_per_cluster.pdf
+no display found. Using non-interactive Agg backend
+      agentId  longest_stop_s  longest_stop_9_16_s  longest_trip_m  \
+4  1000084600         47678.0              25200.0    27852.149025   
+6  1000318601         47723.0              25200.0     7793.042183   
+7  1000361500         69593.0              14400.0    43486.575634   
+
+   total_stop_s  total_trip_m  parked_s_[0.0;900.0]  distance_m_[0.0;900.0]  \
+4       83155.0  55376.240696                 900.0                     0.0   
+6       84780.0  18704.807528                 900.0                     0.0   
+7       82571.0  61393.503278                 900.0                     0.0   
+
+   parked_s_[900.0;1800.0]  distance_m_[900.0;1800.0]  \
+4                    900.0                        0.0   
+6                    900.0                        0.0   
+7                    900.0                        0.0   
+
+               ...               parked_s_[81900.0;82800.0]  \
+4              ...                                    900.0   
+6              ...                                    900.0   
+7              ...                                    900.0   
+
+   distance_m_[81900.0;82800.0]  parked_s_[82800.0;83700.0]  \
+4                           0.0                       900.0   
+6                           0.0                       900.0   
+7                           0.0                       900.0   
+
+   distance_m_[82800.0;83700.0]  parked_s_[83700.0;84600.0]  \
+4                           0.0                       900.0   
+6                           0.0                       900.0   
+7                           0.0                       900.0   
+
+   distance_m_[83700.0;84600.0]  parked_s_[84600.0;85500.0]  \
+4                           0.0                       900.0   
+6                           0.0                       900.0   
+7                           0.0                       900.0   
+
+   distance_m_[84600.0;85500.0]  parked_s_[85500.0;86400.0]  \
+4                           0.0                       900.0   
+6                           0.0                       900.0   
+7                           0.0                       900.0   
+
+   distance_m_[85500.0;86400.0]  
+4                           0.0  
+6                           0.0  
+7                           0.0  
+
+[3 rows x 198 columns]
+[ 7200 14400 28800 57600]
+[ 50. 100. 200. 400.]
+       agentId  longest_stop_s  longest_stop_9_16_s  longest_trip_m  \
+4   1000084600         47678.0              25200.0    27852.149025   
+6   1000318601         47723.0              25200.0     7793.042183   
+7   1000361500         69593.0              14400.0    43486.575634   
+8   1000377500         65615.0              18000.0    11907.889622   
+10  1000381800         37172.0              10237.0     8497.303749   
+
+    total_stop_s  total_trip_m  parked_s_[0.0;900.0]  distance_m_[0.0;900.0]  \
+4        83155.0  55376.240696                 900.0                     0.0   
+6        84780.0  18704.807528                 900.0                     0.0   
+7        82571.0  61393.503278                 900.0                     0.0   
+8        84486.0  23872.532921                 900.0                     0.0   
+10       82107.0  40825.427634                 900.0                     0.0   
+
+    parked_s_[900.0;1800.0]  distance_m_[900.0;1800.0]  \
+4                     900.0                        0.0   
+6                     900.0                        0.0   
+7                     900.0                        0.0   
+8                     900.0                        0.0   
+10                    900.0                        0.0   
+
+                    ...                   distance_m_[83700.0;84600.0]  \
+4                   ...                                            0.0   
+6                   ...                                            0.0   
+7                   ...                                            0.0   
+8                   ...                                            0.0   
+10                  ...                                            0.0   
+
+    parked_s_[84600.0;85500.0]  distance_m_[84600.0;85500.0]  \
+4                        900.0                           0.0   
+6                        900.0                           0.0   
+7                        900.0                           0.0   
+8                        900.0                           0.0   
+10                       900.0                           0.0   
+
+    parked_s_[85500.0;86400.0]  distance_m_[85500.0;86400.0]  range_class  \
+4                        900.0                           0.0            0   
+6                        900.0                           0.0            0   
+7                        900.0                           0.0            0   
+8                        900.0                           0.0            0   
+10                       900.0                           0.0            0   
+
+    charge_time_class   range_label  charge_time_label  \
+4                   2  [0 , 50.0km]       [4.0 , 8.0h]   
+6                   2  [0 , 50.0km]       [4.0 , 8.0h]   
+7                   2  [0 , 50.0km]       [4.0 , 8.0h]   
+8                   2  [0 , 50.0km]       [4.0 , 8.0h]   
+10                  1  [0 , 50.0km]       [2.0 , 4.0h]   
+
+                                   label  
+4   range_[0 , 50.0km]-time_[4.0 , 8.0h]  
+6   range_[0 , 50.0km]-time_[4.0 , 8.0h]  
+7   range_[0 , 50.0km]-time_[4.0 , 8.0h]  
+8   range_[0 , 50.0km]-time_[4.0 , 8.0h]  
+10  range_[0 , 50.0km]-time_[2.0 , 4.0h]  
+
+[5 rows x 203 columns]
+touch targets/stem_classes
+make[1]: Leaving directory `/cluster/work/ivt_vpl/tchervec/sccer_model_coupling'

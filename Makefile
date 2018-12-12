@@ -68,11 +68,11 @@ requirements.txt:
 #####################################################################################
 
 targets/features: targets/java_utils
-	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/switzerland_population.xml.gz $(RAW_DIR)/switzerland_network.xml.gz $(RAW_DIR)/0.events.xml.gz $(INTERIM_DIR)/features.txt
+	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/zurich_1pct/population.xml.gz $(RAW_DIR)/zurich_1pct/mmNetwork.xml.gz $(RAW_DIR)/zurich_1pct/800.events.xml.gz $(INTERIM_DIR)/features.txt
 	touch $@
 
 targets/household_features: targets/java_utils
-	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures $(RAW_DIR)/switzerland_population.xml.gz $(RAW_DIR)/switzerland_households.xml.gz $(INTERIM_DIR)/household_features.txt
+	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures $(RAW_DIR)/zurich_1pct/population.xml.gz $(RAW_DIR)/zurich_1pct/households.xml.gz $(INTERIM_DIR)/household_features.txt
 	touch $@
 
 targets/stem_classes: targets/features targets/household_features targets/python_dependencies
