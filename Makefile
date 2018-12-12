@@ -4,14 +4,14 @@ MAKE_DIR = $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # Java paths
 JAVA_RELEASE_DIR = $(MAKE_DIR)/.release
-JAVA_RUN = java -Xmx7g -cp "$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/*:$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/libs/*"
+JAVA_RUN = java -Xmx17g -cp "$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/*:$(JAVA_RELEASE_DIR)/sccer_model_coupling-0.0.1-SNAPSHOT/libs/*"
 
 JAVA_FILES = $(find $(MAKE_DIR)/matsim-interface/src/ -name '*.java')
 
 # Python paths
 VENV_DIR = $(MAKE_DIR)/sccer-venv/
 PIP = $(VENV_DIR)/bin/pip
-PYTHON = $(VENV_DIR)/bin/python3.5
+PYTHON = $(VENV_DIR)/bin/python3.6
 JUPYTER = $(VENV_DIR)/bin/jupyter
 RUN_NOTEBOOK = $(JUPYTER) nbconvert --ExecutePreprocessor.timeout=-1 --inplace --to notebook --execute
 
@@ -22,12 +22,19 @@ INTERIM_DIR = $(DATA_DIR)/10_interim/
 FINAL_DIR = $(DATA_DIR)/20_final/
 
 ####################################################################################
-.PHONY: python_dependencies java_utils setup_euler clean all
+.PHONY: python_dependencies java_utils setup_euler clean all all_euler
+
+all: targets/stem_classes
 
 start_notebook: targets/python_dependencies all
 	$(JUPYTER) notebook
 
-all: targets/stem_classes
+# somehow did not manage to get access to outside world from compute nodes.
+# So on euler, need to first build python venv and java utils, and only then
+# submit job for the rest
+all_euler: targets/python_dependencies targets/java_utils
+	# TODO: check what bsub parameters make sense (or switch to snakemake to handle this better)
+	bsub -R "rusage[mem=7500]" make all
 
 clean:
 	rm -r targets
@@ -39,7 +46,7 @@ clean:
 # Build, setup
 #####################################################################################
 targets/venv:
-	virtualenv -p python3.5 $(VENV_DIR)
+	virtualenv -p python3.6 $(VENV_DIR)
 	touch targets/venv
 
 targets/python_dependencies: targets/venv
@@ -61,7 +68,7 @@ requirements.txt:
 #####################################################################################
 
 targets/features: targets/java_utils
-	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/switzerland_population.xml.gz $(RAW_DIR)/switzerland_network.xml.gz $(RAW_DIR)/output_events.xml.gz $(INTERIM_DIR)/features.txt
+	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/switzerland_population.xml.gz $(RAW_DIR)/switzerland_network.xml.gz $(RAW_DIR)/0.events.xml.gz $(INTERIM_DIR)/features.txt
 	touch $@
 
 targets/household_features: targets/java_utils
