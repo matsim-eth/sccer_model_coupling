@@ -77,5 +77,5 @@ targets/household_features: targets/java_utils
 
 targets/stem_classes: targets/features targets/household_features targets/python_dependencies
 	$(PYTHON) python-analysis/src/run/002_activity_patterns_with_park_time.py -i $(INTERIM_DIR)/features.txt -o $(FINAL_DIR)/002_clusters.csv -f $(FINAL_DIR)/002_parktimes_per_cluster.pdf
-	$(PYTHON) python-analysis/src/run/003_travel_distance_with_household_size.py -p $(INTERIM_DIR)/features.txt -h $(INTERIM_DIR)/household_features.txt -o $(FINAL_DIR)/003_clusters.csv -f $(FINAL_DIR)/003_parktimes_per_cluster.pdf
+	$(PYTHON) python-analysis/src/run/003_travel_distance_with_household_size.py -p $(INTERIM_DIR)/features.txt -f $(INTERIM_DIR)/household_features.txt -o $(FINAL_DIR)/003_clusters.csv -f $(FINAL_DIR)/003_parktimes_per_cluster.pdf
 	touch $@

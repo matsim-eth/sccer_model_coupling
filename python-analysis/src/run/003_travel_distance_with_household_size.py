@@ -13,7 +13,7 @@ from optparse import OptionParser
 
 option_parser = OptionParser()
 option_parser.add_option( "-p" , "--plans" , dest="plans" , help="features extracted by WriteSccerPlanFeatures")
-option_parser.add_option( "-h" , "--households" , dest="households" , help="features extracted by WriteSccerHouseholdFeatures")
+option_parser.add_option( "-f" , "--households" , dest="households" , help="features extracted by WriteSccerHouseholdFeatures")
 option_parser.add_option( "-f" , "--figure" , dest="figure" , help="output path for figure file")
 option_parser.add_option( "-o" , "--output" , dest="output" , help="output path for output csv")
 options, args = option_parser.parse_args()
