@@ -105,36 +105,41 @@ crosstab_clusters
 
 # In[38]:
 
-
-parked_columns = [ v for v in pred_meaning.columns.values if v.startswith( "parked_s" ) ]
+parked_and_dist_columns = [ v for v in pred_meaning.columns.values if (v.startswith( "parked_s" ) or v.startswith("distance_m"))]
 
 def decode_time( type ):
     def f( name ):
         interval = re.search("\[(.*)\]", name ).group(1).split(';')
-
+        
         low= float(interval[0])
         high=float(interval[1])
-
+        
         if (type == 'middle'): return ( low + high ) / 2.0
         if (type == 'low'): return low
         if (type == 'high'): return high
-
+        
         raise NameError( type )
 
     return f
 
-parktime_per_group = pred_meaning.groupby( ("range_label", "household_size_label") )[parked_columns].aggregate( np.average )
+parktime_per_group = pred_meaning.groupby( ("range_label", "household_size_label") )[parked_and_dist_columns].aggregate( np.average )
 parktime_per_group['n'] = pred_meaning.groupby( ("range_label", "household_size_label") )['range_label'].aggregate( np.size )
 parktime_per_group = parktime_per_group.reset_index()
 parktime_per_group = pd.melt( parktime_per_group ,
-                              id_vars=['range_label', 'household_size_label', 'n'], value_vars=parked_columns,
-                              var_name="interval_s", value_name="parked_time_s" )
-parktime_per_group['interval_start_s'] = parktime_per_group["interval_s"].apply( decode_time( 'low' ) )
-parktime_per_group['interval_end_s'] = parktime_per_group["interval_s"].apply( decode_time( 'high' ) )
-parktime_per_group['time_of_day_s'] = parktime_per_group["interval_s"].apply( decode_time( 'middle' ) )
+                              id_vars=['range_label', 'household_size_label', 'n'], value_vars=parked_and_dist_columns,
+                              var_name="variable", value_name="value" )
+parktime_per_group['interval_start_s'] = parktime_per_group["variable"].apply( decode_time( 'low' ) )
+parktime_per_group['interval_end_s'] = parktime_per_group["variable"].apply( decode_time( 'high' ) )
+parktime_per_group['time_of_day_s'] = parktime_per_group["variable"].apply( decode_time( 'middle' ) )
+parktime_per_group['variable'] = parktime_per_group['variable'].apply(lambda s: re.search('(.*)_\[.*\]', s).group(1))
+
+parktime_per_group = parktime_per_group.set_index([c for c in parktime_per_group.columns.values if c != 'value'])\
+                            .unstack('variable').reset_index()
+parktime_per_group.columns = [' '.join(c).strip().split(' ')[-1] for c in parktime_per_group.columns]
 parktime_per_group['time_of_day_h'] = parktime_per_group['time_of_day_s'] / 3600.0
-parktime_per_group['parked_time_min'] = parktime_per_group['parked_time_s'] / 60.0
-parktime_per_group = parktime_per_group.drop(columns=['interval_s'])
+parktime_per_group['parked_time_min'] = parktime_per_group['parked_s'] / 60.0
+parktime_per_group['distance_km'] = parktime_per_group['distance_m'] / 1000.0
+#parktime_per_group = parktime_per_group.drop(columns=['interval_s'])
 parktime_per_group
 
 
@@ -205,6 +210,17 @@ grid = sns.FacetGrid( parktime_per_group ,
 grid.map( annotate, "n" )
 grid.map( plt.plot, "time_of_day_h" , "parked_time_min" )
 #grid.add_legend()
+
+
+# In[ ]:
+
+grid_d = sns.FacetGrid( parktime_per_group ,
+                      row="household_size_label", col="range_label" , hue="n",
+                      row_order=household_size_ordered, col_order=range_ordered,
+                      palette=create_palette(parktime_per_group.n),
+                      margin_titles=True )
+grid_d.map( annotate, "n" )
+grid_d.map( plt.plot, "time_of_day_h" , "distance_km" )
 
 
 # In[ ]:
