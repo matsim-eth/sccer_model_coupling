@@ -46,7 +46,7 @@ print( features.head( 3 ) )
 
 # In[8]:
 
-
+print("Define range clusters...")
 range_thresholds = np.array( [ 50 * 1000 * 2 ** i for i in range(2) ] )
 print( range_thresholds / 1000 )
 
@@ -55,6 +55,7 @@ print( range_thresholds / 1000 )
 
 # In[9]:
 
+print("Define household clusters...")
 household_thresholds = np.array( [ i + 1 for i in range(3) ] )
 print( household_thresholds )
 
@@ -62,6 +63,7 @@ print( household_thresholds )
 
 # In[10]:
 
+print("Adding labels...")
 
 def find_threshold( t , thresholds , unit ):
     if t == len( thresholds ):
@@ -105,6 +107,7 @@ crosstab_clusters
 
 # In[38]:
 
+print("Compute when cars park...")
 parked_and_dist_columns = [ v for v in pred_meaning.columns.values if (v.startswith( "parked_s" ) or v.startswith("distance_m"))]
 
 def decode_time( type ):
@@ -153,7 +156,7 @@ parktime_per_group.dtypes
 
 # In[15]:
 
-
+print("Setting up plots...")
 # To get nice plots: order categories in a meaningful way
 
 def numeric_range( r ):
@@ -225,6 +228,6 @@ grid_d.map( plt.plot, "time_of_day_h" , "distance_km" )
 
 # In[ ]:
 
-
+print("Saving output...")
 grid.savefig( options.figure )
 parktime_per_group.to_csv( options.output )
