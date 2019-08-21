@@ -34,7 +34,7 @@ start_notebook: targets/python_dependencies all
 # submit job for the rest
 all_euler: targets/python_dependencies targets/java_utils
 	# TODO: check what bsub parameters make sense (or switch to snakemake to handle this better)
-	bsub -R "rusage[mem=7500]" make all
+	bsub -R "rusage[mem=20000]" make all
 
 clean:
 	rm -r targets
@@ -68,11 +68,11 @@ requirements.txt:
 #####################################################################################
 
 targets/features: targets/java_utils
-	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/population.xml.gz $(RAW_DIR)/network.xml.gz $(RAW_DIR)/output_events.xml.gz $(INTERIM_DIR)/features.txt
+	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures $(RAW_DIR)/output_plans.xml.gz $(RAW_DIR)/output_network.xml.gz $(RAW_DIR)/output_events.xml.gz $(INTERIM_DIR)/features.txt
 	touch $@
 
 targets/household_features: targets/java_utils
-	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures $(RAW_DIR)/population.xml.gz $(RAW_DIR)/households.xml.gz $(INTERIM_DIR)/household_features.txt
+	$(JAVA_RUN) ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures $(RAW_DIR)/output_plans.xml.gz $(RAW_DIR)/output_households.xml.gz $(INTERIM_DIR)/household_features.txt
 	touch $@
 
 targets/stem_classes: targets/features targets/household_features targets/python_dependencies
