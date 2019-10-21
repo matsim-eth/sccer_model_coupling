@@ -107,8 +107,7 @@ parktime_per_group['time_of_day_s'] = parktime_per_group["interval_s"].apply(dec
 parktime_per_group['time_of_day_h'] = parktime_per_group['time_of_day_s'] / 3600.0
 parktime_per_group['parked_time_min'] = parktime_per_group['parked_time_s'] / 60.0
 parktime_per_group = parktime_per_group.drop(columns=['interval_s'])
-print(parktime_per_group)
-
+print(parktime_per_group.head(10))
 
 # To get nice plots: order categories in a meaningful way
 print("Generating plots...")
@@ -152,7 +151,6 @@ def create_palette(ns):
 def annotate(n, **kwargs):
     return plt.annotate("n=" + str(n.iloc[0]), xy=(0, 1))
 
-
 grid = sns.FacetGrid(parktime_per_group,
                       row="charge_time_label", col="range_label", hue="n",
                       row_order=charge_ordered, col_order=range_ordered,
@@ -164,6 +162,9 @@ grid.map(plt.plot, "time_of_day_h", "parked_time_min")
 
 # Save outputs
 print("Saving outputs...")
+print(options.figure)
 grid.savefig(options.figure)
+print(options.output)
 parktime_per_group.to_csv(options.output)
+print("Done")
 
