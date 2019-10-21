@@ -110,6 +110,10 @@ print("--- MATSim ---")
 # load in trips (MATSim)
 print("Loading trips...")
 df_trips_matsim = pd.read_csv(filepath_or_buffer=options.matsim_trips, sep=";")
+
+# convert distances to km
+df_trips_matsim['network_distance'] = df_trips_matsim['network_distance'] / 1000
+df_trips_matsim['crowfly_distance'] = df_trips_matsim['crowfly_distance'] / 1000
 print(df_trips_matsim.head(3))
 
 # filter only car trips
@@ -451,7 +455,7 @@ df_trips_w_veh.loc[:, "travelDistance_km"] = df_trips_w_veh.loc[:, "travelDistan
 
 # sort by timestamp
 print("Sorting data by timestamp...")
-df_trips_w_veh = df_trips_w_veh.sort_values(by=["startTime","endTime"])
+df_trips_w_veh = df_trips_w_veh.sort_values(by=["startTime","endTime"], ascending=True)
 print(df_trips_w_veh.head(10))
 
 # plot distance distribution
@@ -459,7 +463,8 @@ print("Plotting distance distribution...")
 data = df_trips_w_veh["travelDistance_km"].values
 plt.figure(dpi=120)
 plt.hist(data, bins=500)
-plt.xlim((0,50))
+x_max = np.ceil(np.percentile(data, 95) / 10) * 10
+plt.xlim((0, x_max))
 plt.xlabel("Distance (km)")
 plt.ylabel("# of car trips")
 plt.savefig('{dir}/distance_distribution.{ext}'.format(dir=options.fig_dir, ext=options.fig_ext))
