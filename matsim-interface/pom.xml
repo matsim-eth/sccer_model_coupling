@@ -6,6 +6,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 
 	<properties>
+		<matsim.version>12.0-2019w20-SNAPSHOT</matsim.version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<skipTests>false</skipTests>
@@ -28,21 +29,13 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<version>3.0.2</version>
-			</plugin>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.5.3</version>
-				<configuration>
-					<descriptor>src/main/assembly/assembly-release.xml</descriptor>
-				</configuration>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.2.0</version>
 				<executions>
 					<execution>
-						<id>create-archive</id>
 						<phase>package</phase>
 						<goals>
-							<goal>single</goal>
+							<goal>shade</goal>
 						</goals>
 					</execution>
 				</executions>
@@ -54,7 +47,7 @@
 		<dependency>
 			<groupId>org.matsim</groupId>
 			<artifactId>matsim</artifactId>
-			<version>0.10.0-eth</version>
+			<version>${matsim.version}</version>
 		</dependency>
 	</dependencies>
 </project>
