@@ -5,6 +5,8 @@ __pycache__/
 .ipynb_checkpoints/
 sccer-venv/
 .release/
+data/00_raw/*
+!data/00_raw/.gitkeep
 data/10_interim/*
 !data/10_interim/.gitkeep
 data/20_final/*
