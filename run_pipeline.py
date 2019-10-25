@@ -35,7 +35,7 @@ if update or not os.path.exists("{path}/{year}_plan_features.csv".format(path=TE
 # run household extraction
 if update or not os.path.exists("{path}/{year}_household_features.csv".format(path=TEMP_PATH, year=year)):
     sp.check_call([
-        "java", "-Xmx40g", "-cp", JAR_PATH, "ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures",
+        "java", "-Xmx40g", "-cp", JAR_PATH, "ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures",
         "{path}/bl_{year}_25pct/output_plans.xml.gz".format(path=SCENARIOS_PATH, year=year),
         "{path}/bl_{year}_25pct/output_households.xml.gz".format(path=SCENARIOS_PATH, year=year),
         "{path}/{year}_household_features.csv".format(path=TEMP_PATH, year=year)
