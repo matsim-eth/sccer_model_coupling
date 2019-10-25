@@ -78,6 +78,8 @@ public class WriteSccerPlanFeatures {
 		extractor.writeFeatures(
 						scenario.getPopulation(),
 						outputFile );
+
+		log.info("Done");
 	}
 
 	public static ReplayEvents.Results replacePlansByExperiencedPlans(
