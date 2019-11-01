@@ -24,6 +24,7 @@ update = options.update
 
 # run features extraction
 if update or not os.path.exists("{path}/{year}_plan_features.csv".format(path=TEMP_PATH, year=year)):
+    print("feature extraction...")
     sp.check_call([
         "java", "-Xmx40g", "-cp", JAR_PATH, "ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures",
         "{path}/bl_{year}_25pct/output_plans.xml.gz".format(path=SCENARIOS_PATH, year=year),
@@ -34,6 +35,7 @@ if update or not os.path.exists("{path}/{year}_plan_features.csv".format(path=TE
 
 # run household extraction
 if update or not os.path.exists("{path}/{year}_household_features.csv".format(path=TEMP_PATH, year=year)):
+    print("household feature extraction...")
     sp.check_call([
         "java", "-Xmx40g", "-cp", JAR_PATH, "ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures",
         "{path}/bl_{year}_25pct/output_plans.xml.gz".format(path=SCENARIOS_PATH, year=year),
@@ -43,6 +45,7 @@ if update or not os.path.exists("{path}/{year}_household_features.csv".format(pa
 
 # run trips
 if update or not os.path.exists("{path}/{year}_trips.csv".format(path=TEMP_PATH, year=year)):
+    print("getting trips...")
     sp.check_call([
         "java", "-Xmx40g", "-cp", JAR_PATH, "ch.ethz.ivt.sccer.analysis.RunTripAnalysis",
         "--network-path", "{path}/bl_{year}_25pct/output_network.xml.gz".format(path=SCENARIOS_PATH, year=year),
@@ -52,39 +55,45 @@ if update or not os.path.exists("{path}/{year}_trips.csv".format(path=TEMP_PATH,
 
 # activity patterns with park time
 if update or not os.path.exists("{path}/01_agent_clusters.{year}.csv".format(path=OUTPUT_PATH, year=year)):
+    print("creating activity patterns with park time for STEM...")
 
-    figure_path = "{path}/figures/{year}".format(path=OUTPUT_PATH, year=year)
-    if ~os.path.exists(figure_path):
-        os.makedirs(figure_path)
+    figure_dir = os.path.abspath("{path}/figures/{year}".format(path=OUTPUT_PATH, year=year))
+
+    if not os.path.isdir(figure_dir):
+        os.makedirs(figure_dir)
 
     sp.check_call([
         "python", "{path}/01_activity_patterns_with_park_time.py".format(path=PYTHON_PATH),
         "--input", "{path}/{year}_plan_features.csv".format(path=TEMP_PATH, year=year),
-        "--figure", "{path}/01_agent_clusters.{year}.png".format(path=figure_path, year=year),
+        "--figure", "{path}/01_agent_clusters.{year}.png".format(path=figure_dir, year=year),
         "--output", "{path}/01_agent_clusters.{year}.csv".format(path=OUTPUT_PATH, year=year)
     ])
 
 # travel distance with hh size
 if update or not os.path.exists("{path}/02_agent_clusters.{year}.csv".format(path=OUTPUT_PATH, year=year)):
+    print("creating travel distance with hh size for STEM...")
 
-    figure_path = "{path}/figures/{year}".format(path=OUTPUT_PATH, year=year)
-    if ~os.path.exists(figure_path):
-        os.makedirs(figure_path)
+    figure_dir = os.path.abspath("{path}/figures/{year}".format(path=OUTPUT_PATH, year=year))
+
+    if not os.path.isdir(figure_dir):
+        os.makedirs(figure_dir)
 
     sp.check_call([
         "python", "{path}/02_travel_distance_with_household_size.py".format(path=PYTHON_PATH),
         "--plans", "{path}/{year}_plan_features.csv".format(path=TEMP_PATH, year=year),
         "--households", "{path}/{year}_household_features.csv".format(path=TEMP_PATH, year=year),
-        "--figure", "{path}/02_agent_clusters.{year}.png".format(path=figure_path, year=year),
+        "--figure", "{path}/02_agent_clusters.{year}.png".format(path=figure_dir, year=year),
         "--output", "{path}/02_agent_clusters.{year}.csv".format(path=OUTPUT_PATH, year=year)
     ])
 
 # trips for swissmod
 if update or not os.path.exists("{path}/01-trips.{year}.csv".format(path=OUTPUT_PATH, year=year)):
+    print("creating trips for Swissmod...")
 
-    figure_path = "{path}/figures/{year}".format(path=OUTPUT_PATH, year=year)
-    if ~os.path.exists(figure_path):
-        os.makedirs(figure_path)
+    figure_dir = os.path.abspath("{path}/figures/{year}".format(path=OUTPUT_PATH, year=year))
+
+    if not os.path.isdir(figure_dir):
+        os.makedirs(figure_dir)
 
     sp.check_call([
         "python", "{path}/03_merge_beddem_to_matsim_agents_for_swissmod.py".format(path=PYTHON_PATH),
@@ -93,7 +102,7 @@ if update or not os.path.exists("{path}/01-trips.{year}.csv".format(path=OUTPUT_
         "--matsim-trips", "{path}/{year}_trips.csv".format(path=TEMP_PATH, year=year),
         "--municipality-shp", "{path}/shp/g1g18.shp".format(path=DATA_PATH),
         "--spatial-structure", "{path}/spatial_structure_2018.xlsx".format(path=DATA_PATH),
-        "--fig-dir", figure_path,
+        "--fig-dir", figure_dir,
         "--fig-ext", "png",
         "--output", "{path}/01-trips.{year}.csv".format(path=OUTPUT_PATH, year=year)
     ])
