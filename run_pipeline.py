@@ -17,10 +17,12 @@ BEDDEM_PATH = "/cluster/work/ivt_vpl/tchervec/JA_Mobility_exchange/S000/BEDDEM-M
 option_parser = OptionParser()
 option_parser.add_option("-y", "--year", dest="year", help="simulation year")
 option_parser.add_option("-u", "--update", default=False, action="store_true", dest="update", help="flag to update outputs")
+option_parser.add_option("-p", "--python", default="python", dest="python", help="python")
 options, args = option_parser.parse_args()
 
 year = options.year
 update = options.update
+python = options.python
 
 # run features extraction
 if update or not os.path.exists("{path}/{year}_plan_features.csv".format(path=TEMP_PATH, year=year)):
@@ -58,7 +60,7 @@ if update or not os.path.exists("{path}/01_agent_clusters.{year}.csv".format(pat
         os.makedirs(figure_path)
 
     sp.check_call([
-        "python", "{path}/01_activity_patterns_with_park_time.py".format(path=PYTHON_PATH),
+        python, "{path}/01_activity_patterns_with_park_time.py".format(path=PYTHON_PATH),
         "--input", "{path}/{year}_plan_features.csv".format(path=TEMP_PATH, year=year),
         "--figure", "{path}/01_agent_clusters.{year}.png".format(path=figure_path, year=year),
         "--output", "{path}/01_agent_clusters.{year}.csv".format(path=OUTPUT_PATH, year=year)
@@ -67,12 +69,13 @@ if update or not os.path.exists("{path}/01_agent_clusters.{year}.csv".format(pat
 # travel distance with hh size
 if update or not os.path.exists("{path}/02_agent_clusters.{year}.csv".format(path=OUTPUT_PATH, year=year)):
 
+    print(os.path.abspath(figure_path), figure_path)
     figure_path = "{path}/figures/{year}".format(path=OUTPUT_PATH, year=year)
     if ~os.path.exists(figure_path):
         os.makedirs(figure_path)
 
     sp.check_call([
-        "python", "{path}/02_travel_distance_with_household_size.py".format(path=PYTHON_PATH),
+        python, "{path}/02_travel_distance_with_household_size.py".format(path=PYTHON_PATH),
         "--plans", "{path}/{year}_plan_features.csv".format(path=TEMP_PATH, year=year),
         "--households", "{path}/{year}_household_features.csv".format(path=TEMP_PATH, year=year),
         "--figure", "{path}/02_agent_clusters.{year}.png".format(path=figure_path, year=year),
@@ -82,12 +85,13 @@ if update or not os.path.exists("{path}/02_agent_clusters.{year}.csv".format(pat
 # trips for swissmod
 if update or not os.path.exists("{path}/01-trips.{year}.csv".format(path=OUTPUT_PATH, year=year)):
 
+    print(os.path.abspath(figure_path), figure_path)
     figure_path = "{path}/figures/{year}".format(path=OUTPUT_PATH, year=year)
     if ~os.path.exists(figure_path):
         os.makedirs(figure_path)
 
     sp.check_call([
-        "python", "{path}/03_merge_beddem_to_matsim_agents_for_swissmod.py".format(path=PYTHON_PATH),
+        python, "{path}/03_merge_beddem_to_matsim_agents_for_swissmod.py".format(path=PYTHON_PATH),
         "--beddem-vehicles", "{path}/01-disaggregatedvehiclestock.{year}.csv".format(path=BEDDEM_PATH, year=year),
         "--beddem-trips", "{path}/03-trips.{year}.csv".format(path=BEDDEM_PATH, year=year),
         "--matsim-trips", "{path}/{year}_trips.csv".format(path=TEMP_PATH, year=year),
