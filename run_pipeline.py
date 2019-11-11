@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import os
 import subprocess as sp
 from optparse import OptionParser
