@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import subprocess as sp
 from optparse import OptionParser
@@ -23,6 +25,7 @@ options, args = option_parser.parse_args()
 year = options.year
 update = options.update
 python = options.python
+
 
 # run features extraction
 if update or not os.path.exists("{path}/{year}_plan_features.csv".format(path=TEMP_PATH, year=year)):
