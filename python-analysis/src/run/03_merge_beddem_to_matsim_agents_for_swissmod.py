@@ -159,7 +159,7 @@ df_municipality_types = pd.read_excel(options.spatial_structure,
 print(df_municipality_types.head(3))
 
 
-def to_gpd(df, x="x", y="y", crs={"init" : "EPSG:2056"}):
+def to_gpd(df, x="x", y="y", crs={"init": "epsg:2056"}):
     df["geometry"] = [
         geo.Point(*coord) for coord in tqdm(
             zip(df[x], df[y]), total=len(df),
@@ -168,8 +168,8 @@ def to_gpd(df, x="x", y="y", crs={"init" : "EPSG:2056"}):
     df = gpd.GeoDataFrame(df)
     df.crs = crs
 
-    if not crs == {"init": "EPSG:2056"}:
-        df = df.to_crs({"init": "EPSG:2056"})
+    if not crs == {"init": "epsg:2056"}:
+        df = df.to_crs({"init": "epsg:2056"})
 
     return df
 
