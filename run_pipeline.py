@@ -2,10 +2,6 @@ import os
 import subprocess as sp
 from optparse import OptionParser
 
-# # external Euler paths
-# SCENARIOS_PATH = "/cluster/work/ivt_vpl/astra1802/output/bl_{year}_25pct"
-# BEDDEM_PATH = "/cluster/work/ivt_vpl/tchervec/JA_Mobility_exchange/S000/BEDDEM-MATSIM"
-
 # get script directory
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -26,7 +22,7 @@ option_parser.add_option("-b", "--beddem-path", dest="beddem_path", help="beddem
 # other
 option_parser.add_option("-y", "--year", dest="year", help="simulation year")
 option_parser.add_option("-u", "--update", default=False, action="store_true", dest="update", help="flag to update outputs")
-option_parser.add_option("-m", "--memory", default='12g', dest="mem", help="java memory (ex. 40g), default = 12g")
+option_parser.add_option("-m", "--memory", default='10g', dest="mem", help="java memory (ex. 40g), default = 10g")
 
 # parse options
 (options, args) = option_parser.parse_args()
@@ -48,6 +44,7 @@ beddem_path = options.beddem_path
 
 year = options.year
 update = options.update
+mem = options.mem
 
 
 # run features extraction
@@ -60,7 +57,7 @@ if update or not os.path.exists("{path}/{year}/plan_features.csv".format(path=te
         os.makedirs(temp_year_dir)
 
     sp.check_call([
-        "java", "-Xmx40g", "-cp", jar_path, "ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures",
+        "java", "-Xmx{mem}".format(mem=mem), "-cp", jar_path, "ch.ethz.ivt.sccer.planfeatures.WriteSccerPlanFeatures",
         "{path}/output_plans.xml.gz".format(path=scenario_path),
         "{path}/output_network.xml.gz".format(path=scenario_path),
         "{path}/output_events.xml.gz".format(path=scenario_path),
@@ -77,7 +74,7 @@ if update or not os.path.exists("{path}/{year}/household_features.csv".format(pa
         os.makedirs(temp_year_dir)
 
     sp.check_call([
-        "java", "-Xmx40g", "-cp", jar_path, "ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures",
+        "java", "-Xmx{mem}".format(mem=mem), "-cp", jar_path, "ch.ethz.ivt.sccer.planfeatures.WriteSccerHouseholdFeatures",
         "{path}/output_plans.xml.gz".format(path=scenario_path),
         "{path}/output_households.xml.gz".format(path=scenario_path),
         "{path}/household_features.csv".format(path=temp_year_dir)
@@ -93,7 +90,7 @@ if update or not os.path.exists("{path}/{year}/trips.csv".format(path=temp_path,
         os.makedirs(temp_year_dir)
 
     sp.check_call([
-        "java", "-Xmx40g", "-cp", jar_path, "ch.ethz.ivt.sccer.analysis.RunTripAnalysis",
+        "java", "-Xmx{mem}".format(mem=mem), "-cp", jar_path, "ch.ethz.ivt.sccer.analysis.RunTripAnalysis",
         "--network-path", "{path}/output_network.xml.gz".format(path=scenario_path),
         "--events-path", "{path}/output_events.xml.gz".format(path=scenario_path),
         "--output-path", "{path}/trips.csv".format(path=temp_year_dir)
