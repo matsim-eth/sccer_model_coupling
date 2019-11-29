@@ -203,14 +203,7 @@ def find_agglo_label(v):
     else:
         return 'rural'
 
-def comp_income_agglo_label(income_levels, agglomeration_types):
-    m = map(lambda i, a: "".join(
-        (find_income_label(i),
-         " - ", find_agglo_label(a))),
-            income_levels, agglomeration_types)
-    return np.array(list(m))
-
-def comp_3_label(annual_distance_km, income_levels, agglomeration_types):
+def comp_label(annual_distance_km, income_levels, agglomeration_types):
     m = map(lambda d, i, a: "".join(
         ("distance_", find_distance_label(d, year_km_thresholds, "km"),
          "-income_", find_income_label(i),
@@ -223,21 +216,20 @@ pred_meaning = (features.assign(year_km_class=list(map(lambda x: bisect(year_km_
                 .assign(year_km_label=lambda x: list(map(lambda t: find_distance_label(t, year_km_thresholds, "km"), x.year_km_class)),
                         income_label=lambda x: list(map(lambda t: find_income_label(t), x.income)),
                         agglo_label=lambda x: list(map(lambda t: find_agglo_label(t), x.agglo_type)))
-                .assign(income_agglo_label=lambda x: comp_income_agglo_label(x.income, x.agglo_type))
-                .assign(label=lambda x: comp_3_label(x.year_km_class, x.income, x.agglo_type)))
+                .assign(label=lambda x: comp_label(x.year_km_class, x.income, x.agglo_type)))
 print(pred_meaning.head())
 
-crosstab_clusters = pd.crosstab(pred_meaning.year_km_label, pred_meaning.income_agglo_label)
+crosstab_clusters = pd.crosstab(pred_meaning.year_km_label, [pred_meaning.income_label, pred_meaning.agglo_label])
 print(crosstab_clusters)
 
 
-# PSI wants to see when the cars are parked during the day.
+# PSI wants to see how much the cars are driven during the day.
 # We should:
-# - visualize the number of cars parked per TOD in a faceted way
-# - export a table containing the number of parked car per time bin per class
+# - visualize the number of cars driving per TOD in a faceted way
+# - export a table containing the number of driven cars per time bin per class
 # 
 
-parked_columns = [v for v in pred_meaning.columns.values if v.startswith("parked_s")]
+drive_columns = [v for v in pred_meaning.columns.values if v.startswith("driven_s")]
 
 
 def decode_time(type):
@@ -255,43 +247,54 @@ def decode_time(type):
 
     return f
 
-
-parktime_per_group = pred_meaning.groupby(["year_km_label", "income_agglo_label"])[parked_columns].aggregate(np.average)
-#parktime_per_group['n'] = pred_meaning.groupby(["year_km_label", "income_agglo_label"])['year_km_label'].aggregate(np.size)
-parktime_per_group = parktime_per_group.reset_index()
-parktime_per_group = pd.melt(parktime_per_group,
-                             id_vars=['year_km_label', 'income_agglo_label'], value_vars=parked_columns,
-                             var_name="interval_s", value_name="parked_time_s"
-                             )
-parktime_per_group['interval_start_s'] = parktime_per_group["interval_s"].apply(decode_time('low'))
-parktime_per_group['interval_end_s'] = parktime_per_group["interval_s"].apply(decode_time('high'))
-parktime_per_group['time_of_day_s'] = parktime_per_group["interval_s"].apply(decode_time('middle'))
-parktime_per_group['time_of_day_h'] = parktime_per_group['time_of_day_s'] / 3600.0
-parktime_per_group['parked_time_min'] = parktime_per_group['parked_time_s'] / 60.0
-parktime_per_group = parktime_per_group.drop(columns=['interval_s'])
-print(parktime_per_group.head(10))
+drivetime_per_group = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])[drive_columns].aggregate(np.average)
+drivetime_per_group['n'] = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])["agglo_label"].agg(np.size)
+drivetime_per_group = drivetime_per_group.reset_index()
+drivetime_per_group = pd.melt(drivetime_per_group,
+                              id_vars=['year_km_label', 'income_label', 'agglo_label', 'n'], value_vars=drive_columns,
+                              var_name="interval_s", value_name="driven_time_s"
+                              )
+drivetime_per_group['interval_start_s'] = drivetime_per_group["interval_s"].apply(decode_time('low'))
+drivetime_per_group['interval_end_s'] = drivetime_per_group["interval_s"].apply(decode_time('high'))
+drivetime_per_group['time_of_day_s'] = drivetime_per_group["interval_s"].apply(decode_time('middle'))
+drivetime_per_group['time_of_day_h'] = drivetime_per_group['time_of_day_s'] / 3600.0
+drivetime_per_group['driven_time_min'] = drivetime_per_group['driven_time_s'] / 60.0
+drivetime_per_group = drivetime_per_group.drop(columns=['interval_s'])
+print(drivetime_per_group.head(10))
 
 # To get nice plots: order categories in a meaningful way
 print("Generating plots...")
 
 
-def numeric_range(r):
+def distance_range(r):
     if r.startswith(">"): return float("inf")
 
     low = re.search("\[(.*),", r).group(1)
     return float(low)
 
+def income_agglo_range(r):
+    code = ""
+    if r.startswith(">") : code += "1"
+    else : code += "0"
+
+    if "urban" in r : code += "1"
+    else : code += "0"
+
+    return float(code)
+
 
 # looks strange, but set cannot get a pandas series in constructor, while list can...
 print("Ordering annual km traveled...")
-distance_ordered = list(set(list(parktime_per_group.year_km_label)))
-distance_ordered.sort(key=numeric_range)
+distance_ordered = list(set(list(drivetime_per_group.year_km_label)))
+distance_ordered.sort(key=distance_range)
 print(distance_ordered)
 
 print("Ordering incomes + agglo types...")
-income_agglo_ordered = list(set(list(parktime_per_group.income_agglo_label)))
-#income_ordered.sort(key=numeric_range)
+drivetime_per_group['income_agglo_label'] = drivetime_per_group['income_label'].str.cat(drivetime_per_group['agglo_label'], sep='\n')
+income_agglo_ordered = list(set(list(drivetime_per_group.income_agglo_label)))
+income_agglo_ordered.sort(key=income_agglo_range)
 print(income_agglo_ordered)
+
 
 # Cannot get bloody Seaborn to understand that my "hue" variable should be continuous...
 # Dirty hack to get this right
@@ -312,21 +315,24 @@ def create_palette(ns):
 def annotate(n, **kwargs):
     return plt.annotate("n=" + str(n.iloc[0]), xy=(0, 1))
 
-plt.figure(dpi=120)
-grid = sns.FacetGrid(parktime_per_group,
-                     row="income_agglo_label", col="year_km_label",  #hue="n",
-                     row_order=income_agglo_ordered, col_order=distance_ordered,
-                     #palette=create_palette(parktime_per_group.n),
-                     margin_titles=True)
-#grid.map(annotate, "n")
-grid.map(plt.plot, "time_of_day_h", "parked_time_min")
 
+plt.figure(dpi=120)
+grid = sns.FacetGrid(drivetime_per_group,
+                     row="income_agglo_label", col="year_km_label",  hue="n",
+                     row_order=income_agglo_ordered, col_order=distance_ordered,
+                     palette=create_palette(drivetime_per_group.n),
+                     margin_titles=True)
+grid.map(annotate, "n")
+grid.map(plt.plot, "time_of_day_h", "driven_time_min")
+
+# cleanup
+drivetime_per_group = drivetime_per_group.drop(['income_agglo_label'], axis=1)
 
 # Save outputs
 print("Saving outputs...")
 print(options.figure)
 grid.savefig(options.figure)
 print(options.output)
-parktime_per_group.to_csv(options.output)
+drivetime_per_group.to_csv(options.output)
 print("Done")
 

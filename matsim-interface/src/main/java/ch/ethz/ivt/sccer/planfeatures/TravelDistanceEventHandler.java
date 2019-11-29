@@ -31,7 +31,7 @@ public class TravelDistanceEventHandler implements
 	private final Map<Id<Person>,PersonRecord> records = new HashMap<>();
 
 	// TODO make configurable
-	private final double binSize = 15 * 60;
+	private final double binSize = 60 * 60;
 
 	public static class Module extends AbstractModule {
 		@Override

@@ -39,17 +39,31 @@ public class PlanFeatureExtractor {
 		final Counter counter = new Counter( "Extract features for agent # " , " / "+population.getPersons().size() );
 		try ( BufferedWriter writer = IOUtils.getBufferedWriter( file ) ) {
 			writer.write( "agentId" );
+			writer.write( "\t" + "age" );
+			writer.write( "\t" + "sex" );
+			writer.write( "\t" + "mzHeadId" );
+			writer.write( "\t" + "mzPersonId" );
+			writer.write( "\t" + "statpopHouseholdId" );
+			writer.write( "\t" + "statpopPersonId" );
 			for ( Feature f : features ) {
 				writer.write( "\t"+f.name );
 			}
 
 			for ( Person person : population.getPersons().values() ) {
-				counter.incCounter();
-				final Plan plan = person.getSelectedPlan();
+				if (!person.getId().toString().contains("freight")) {
+					counter.incCounter();
+					final Plan plan = person.getSelectedPlan();
 
-				writer.newLine();
-				writer.write( person.getId().toString() );
-				for ( Feature feature : features ) writer.write( "\t"+feature.function.apply( plan ) );
+					writer.newLine();
+					writer.write( person.getId().toString() );
+					writer.write( "\t" + person.getAttributes().getAttribute("age").toString() );
+					writer.write( "\t" + person.getAttributes().getAttribute("sex").toString() );
+					writer.write( "\t" + person.getAttributes().getAttribute("mzHeadId").toString() );
+					writer.write( "\t" + person.getAttributes().getAttribute("mzPersonId").toString() );
+					writer.write( "\t" + person.getAttributes().getAttribute("statpopHouseholdId").toString() );
+					writer.write( "\t" + person.getAttributes().getAttribute("statpopPersonId").toString() );
+					for ( Feature feature : features ) writer.write( "\t"+feature.function.apply( plan ) );
+				}
 			}
 			counter.printCounter();
 		}
