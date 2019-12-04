@@ -104,7 +104,8 @@ else
     echo "Setting up Python environment ..."
 
     cat <<< "${python_requirements}" > requirements.txt
-    conda create -p venv python=${python_version} --no-default-packages --channel conda-forge --file requirements.txt -y
+    conda config --set channel_priority strict
+    conda create -p venv python=${python_version} --no-default-packages --file requirements.txt -y
 
     touch python_installed
 fi
