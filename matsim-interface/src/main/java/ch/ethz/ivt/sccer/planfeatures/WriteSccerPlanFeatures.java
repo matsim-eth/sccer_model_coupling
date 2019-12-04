@@ -3,7 +3,6 @@ package ch.ethz.ivt.sccer.planfeatures;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.api.core.v01.population.Leg;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.core.config.ConfigUtils;
@@ -11,7 +10,6 @@ import org.matsim.core.controler.ReplayEvents;
 import org.matsim.core.events.EventsManagerModule;
 import org.matsim.core.network.io.MatsimNetworkReader;
 import org.matsim.core.population.io.PopulationReader;
-import org.matsim.core.router.TripStructureUtils;
 import org.matsim.core.scenario.ScenarioByInstanceModule;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.scoring.ExperiencedPlansModule;
@@ -26,7 +24,7 @@ import java.util.Map;
  */
 public class WriteSccerPlanFeatures {
 	private static final Logger log = Logger.getLogger( WriteSccerPlanFeatures.class );
-	private static final double TIME_STEP = 15 * 60;
+	private static final double TIME_STEP = 60 * 60;
 
 	public static void main( final String... args ) {
 		final String populationFile = args[ 0 ];
@@ -68,8 +66,8 @@ public class WriteSccerPlanFeatures {
 		final TravelDistanceEventHandler distances = results.get(TravelDistanceEventHandler.class);
 		for ( double s=0; s < 24 * 3600; s += TIME_STEP ) {
 			extractor.withFeature(
-					"parked_s_["+s+";"+(s+TIME_STEP)+"]",
-					Features.parkTimeInInterval( s , s + TIME_STEP ));
+					"driven_s_["+s+";"+(s+TIME_STEP)+"]",
+					Features.driveTimeInInterval( s , s + TIME_STEP ));
 			extractor.withFeature(
 					"distance_m_["+s+";"+(s+TIME_STEP)+"]",
 					distances.distanceFeature( s , s + TIME_STEP ));
@@ -78,6 +76,8 @@ public class WriteSccerPlanFeatures {
 		extractor.writeFeatures(
 						scenario.getPopulation(),
 						outputFile );
+
+		log.info("Done");
 	}
 
 	public static ReplayEvents.Results replacePlansByExperiencedPlans(

@@ -111,10 +111,16 @@ print("--- MATSim ---")
 print("Loading trips...")
 df_trips_matsim = pd.read_csv(filepath_or_buffer=options.matsim_trips, sep=";")
 
+# dropping trips with freight agents
+df_trips_matsim = df_trips_matsim[~df_trips_matsim["person_id"].str.contains("freight")]
+
+# convert ids to int
+df_trips_matsim["person_id"] = df_trips_matsim["person_id"].astype(np.int64)
+
 # convert distances to km
 df_trips_matsim['network_distance'] = df_trips_matsim['network_distance'] / 1000
 df_trips_matsim['crowfly_distance'] = df_trips_matsim['crowfly_distance'] / 1000
-print(df_trips_matsim.head(3))
+print(df_trips_matsim.head(10))
 
 # filter only car trips
 print("Filtering car trips...")
@@ -159,7 +165,7 @@ df_municipality_types = pd.read_excel(options.spatial_structure,
 print(df_municipality_types.head(3))
 
 
-def to_gpd(df, x="x", y="y", crs={"init" : "EPSG:2056"}):
+def to_gpd(df, x="x", y="y", crs={"init": "epsg:2056"}):
     df["geometry"] = [
         geo.Point(*coord) for coord in tqdm(
             zip(df[x], df[y]), total=len(df),
@@ -168,8 +174,8 @@ def to_gpd(df, x="x", y="y", crs={"init" : "EPSG:2056"}):
     df = gpd.GeoDataFrame(df)
     df.crs = crs
 
-    if not crs == {"init": "EPSG:2056"}:
-        df = df.to_crs({"init": "EPSG:2056"})
+    if not crs == {"init": "epsg:2056"}:
+        df = df.to_crs({"init": "epsg:2056"})
 
     return df
 
@@ -233,67 +239,104 @@ print(df_home.head(3))
 print("Merging home location info onto MATSim trips...")
 df_trips_matsim_agg = pd.merge(df_trips_matsim_agg, df_home, on="person_id")
 df_trips_matsim_agg = df_trips_matsim_agg.sort_values(["canton_id", "municipality_type"])
-df_trips_matsim_agg.head()
+print(df_trips_matsim_agg.head())
 
 
 # # Matching
 print("--- MATCHING ---")
 
+print(df_trips_matsim_agg.head(3))
+print(df_agents_beddem.head(3))
+
+# set some default values
+df_trips_matsim_agg["agent_id"] = 0
+df_trips_matsim_agg["canton_id_beddem"] = 0
+df_trips_matsim_agg["municipality_type_beddem"] = 0
+df_trips_matsim_agg["vehicle_type"] = ''
+df_trips_matsim_agg["powertrain"] = ''
+df_trips_matsim_agg["consumption"] = 0
+df_trips_matsim_agg["distance_beddem"] = 0
+df_trips_matsim_agg["number_trips_beddem"] = 0
+
 # match MATSim agents to BedDem agents
-canton_ids = df_trips_matsim_agg["canton_id"].unique()
+municipality_types = df_trips_matsim_agg["municipality_type"].unique()
 
-with tqdm(desc="Matching MATSim agents to BedDem agents", total=len(canton_ids)) as canton_progress:
-    for canton_id in canton_ids:
+with tqdm(desc="Matching MATSim agents to BedDem agents", total=len(municipality_types)) as municipality_progress:
+    for municipality_type in municipality_types:
 
-        # create MATSim canton filter
-        f_matsim_caton = (df_trips_matsim_agg["canton_id"] == canton_id)
+        # create MATSim municipality filter
+        f_matsim_municipality = (df_trips_matsim_agg["municipality_type"] == municipality_type)
 
         # create BEDDEM filters
-        f_beddem = np.ones(len(df_agents_beddem), dtype=np.bool)
-        f_beddem_canton = (df_agents_beddem["canton"] == canton_id)
+        f_beddem_m_c = np.ones(len(df_agents_beddem), dtype=np.bool)
+        f_beddem_municipality = (df_agents_beddem["municipality_type"] == municipality_type)
 
-        municipality_types = df_trips_matsim_agg.loc[f_matsim_caton, "municipality_type"].unique()
-        for municipality_type in municipality_types:
+        # create KDtree from BEDDEM agents using municipalities only
+        coordinates_municipality = np.vstack([df_agents_beddem.loc[f_beddem_municipality, "distance"].values]).T
+        kd_tree_municipality = KDTree(coordinates_municipality)
+
+        canton_ids = df_trips_matsim_agg.loc[f_matsim_municipality, "canton_id"].unique()
+        for canton_id in canton_ids:
 
             # get relevant MATSim agents
-            f_matsim_municipality = (df_trips_matsim_agg["municipality_type"] == municipality_type)
-            f_matsim = (f_matsim_caton & f_matsim_municipality)
+            f_matsim_canton = (df_trips_matsim_agg["canton_id"] == canton_id)
+            f_matsim_m_c = (f_matsim_canton & f_matsim_municipality)
 
             # get relevant BEDDEM agents
-            f_beddem_municipality = (df_agents_beddem["municipality_type"] == municipality_type)
+            f_beddem_canton = (df_agents_beddem["canton"] == canton_id)
+            f_beddem_m_c = (f_beddem_canton & f_beddem_municipality)
 
-            # consider cantons when matching
-            if options.consider_cantons:
-                f_beddem = (f_beddem_canton & f_beddem_municipality)
+            # if no match, only consider municipality type
+            if (np.sum(f_beddem_m_c) == 0):
+                f_beddem_m_c = f_beddem_municipality
 
-                # if no match, only consider municipality type
-                if (np.sum(f_beddem) == 0):
-                    f_beddem = f_beddem_municipality
+            # create KDtree from BEDDEM agents using both municipalities and cantons
+            coordinates_municipality_canton = np.vstack([df_agents_beddem.loc[f_beddem_m_c, "distance"].values]).T
+            kd_tree_municipality_canton = KDTree(coordinates_municipality_canton)
 
-            # only consider municipality type
-            else:
-                f_beddem = f_beddem_municipality
+            # try to match MATSim agents using both municipalities and cantons
+            matsim_pts = np.vstack([df_trips_matsim_agg.loc[f_matsim_m_c, "network_distance"].values]).T
+            (distances, indices) = kd_tree_municipality_canton.query(matsim_pts, return_distance=True)
+            indices = indices.flatten()
+            distances = distances.flatten()
 
-            # create KDtree from BEDDEM agents
-            coordinates = np.vstack([df_agents_beddem.loc[f_beddem, "distance"].values]).T
-            kd_tree = KDTree(coordinates)
+            # get matches within 1 km
+            f_direct = distances <= 5
+            f_matsim_m_c_direct = np.zeros(np.shape(f_matsim_m_c), dtype=bool)
+            f_matsim_m_c_direct[f_matsim_m_c] = f_direct
+            df_matches_direct = df_agents_beddem.loc[f_beddem_m_c, :].iloc[list(indices[f_direct])]
 
-            # match MATSim agents
-            matsim_pts = np.vstack([df_trips_matsim_agg.loc[f_matsim, "network_distance"].values]).T
-            indices = kd_tree.query(matsim_pts, return_distance=False).flatten()
-            df_matches = df_agents_beddem.loc[f_beddem, :].iloc[list(indices)]
+            # get matched data
+            df_trips_matsim_agg.loc[f_matsim_m_c_direct, "agent_id"] = df_matches_direct.loc[:, "agent_id"].values
+            df_trips_matsim_agg.loc[f_matsim_m_c_direct, "canton_id_beddem"] = df_matches_direct.loc[:, "canton"].values
+            df_trips_matsim_agg.loc[f_matsim_m_c_direct, "municipality_type_beddem"] = df_matches_direct.loc[:, "municipality_type"].values
+            df_trips_matsim_agg.loc[f_matsim_m_c_direct, "vehicle_type"] = df_matches_direct.loc[:, "vehicle_type"].values
+            df_trips_matsim_agg.loc[f_matsim_m_c_direct, "powertrain"] = df_matches_direct.loc[:, "powertrain"].values
+            df_trips_matsim_agg.loc[f_matsim_m_c_direct, "consumption"] = df_matches_direct.loc[:, "consumption"].values
+            df_trips_matsim_agg.loc[f_matsim_m_c_direct, "distance_beddem"] = df_matches_direct.loc[:, "distance"].values
+            df_trips_matsim_agg.loc[f_matsim_m_c_direct, "number_trips_beddem"] = df_matches_direct.loc[:, "number_trips"].values
 
-            df_trips_matsim_agg.loc[f_matsim, "agent_id"] = df_matches.loc[:, "agent_id"].values
-            df_trips_matsim_agg.loc[f_matsim, "canton_id_beddem"] = df_matches.loc[:, "canton"].values
-            df_trips_matsim_agg.loc[f_matsim, "municipality_type_beddem"] = df_matches.loc[:,
-                                                                            "municipality_type"].values
-            df_trips_matsim_agg.loc[f_matsim, "vehicle_type"] = df_matches.loc[:, "vehicle_type"].values
-            df_trips_matsim_agg.loc[f_matsim, "powertrain"] = df_matches.loc[:, "powertrain"].values
-            df_trips_matsim_agg.loc[f_matsim, "consumption"] = df_matches.loc[:, "consumption"].values
-            df_trips_matsim_agg.loc[f_matsim, "distance_beddem"] = df_matches.loc[:, "distance"].values
-            df_trips_matsim_agg.loc[f_matsim, "number_trips_beddem"] = df_matches.loc[:, "number_trips"].values
+            # try to match only with municipalities otherwise, if there is anything left to match
+            if np.sum(~f_direct) > 0:
+                matsim_pts_indirect = matsim_pts[~f_direct]
+                (distances_indirect, indices_indirect) = kd_tree_municipality.query(matsim_pts_indirect, return_distance=True)
+                distances_indirect = distances_indirect.flatten()
+                indices_indirect = indices_indirect.flatten()
 
-        canton_progress.update()
+                f_matsim_m_c_indirect = np.zeros(np.shape(f_matsim_m_c), dtype=bool)
+                f_matsim_m_c_indirect[f_matsim_m_c] = ~f_direct
+
+                df_matches_indirect = df_agents_beddem.loc[f_beddem_municipality, :].iloc[list(indices_indirect)]
+                df_trips_matsim_agg.loc[f_matsim_m_c_indirect, "agent_id"] = df_matches_indirect.loc[:, "agent_id"].values
+                df_trips_matsim_agg.loc[f_matsim_m_c_indirect, "canton_id_beddem"] = df_matches_indirect.loc[:, "canton"].values
+                df_trips_matsim_agg.loc[f_matsim_m_c_indirect, "municipality_type_beddem"] = df_matches_indirect.loc[:, "municipality_type"].values
+                df_trips_matsim_agg.loc[f_matsim_m_c_indirect, "vehicle_type"] = df_matches_indirect.loc[:, "vehicle_type"].values
+                df_trips_matsim_agg.loc[f_matsim_m_c_indirect, "powertrain"] = df_matches_indirect.loc[:, "powertrain"].values
+                df_trips_matsim_agg.loc[f_matsim_m_c_indirect, "consumption"] = df_matches_indirect.loc[:, "consumption"].values
+                df_trips_matsim_agg.loc[f_matsim_m_c_indirect, "distance_beddem"] = df_matches_indirect.loc[:, "distance"].values
+                df_trips_matsim_agg.loc[f_matsim_m_c_indirect, "number_trips_beddem"] = df_matches_indirect.loc[:, "number_trips"].values
+
+        municipality_progress.update()
 
 print(df_trips_matsim_agg.head(3))
 
@@ -376,8 +419,8 @@ df_vehicle_stock_compare = pd.merge(df_vehicle_stock_matsim, df_vehicle_stock_be
 df_vehicle_stock_compare["count_matsim"] = df_vehicle_stock_compare["count_matsim"] / np.sum(df_vehicle_stock_compare["count_matsim"])
 df_vehicle_stock_compare["count_beddem"] = df_vehicle_stock_compare["count_beddem"] / np.sum(df_vehicle_stock_compare["count_beddem"])
 
-a = df_vehicle_stock_compare.rename({"count_matsim":"share"}, axis=1).drop("count_beddem", axis=1)
-b = df_vehicle_stock_compare.rename({"count_beddem":"share"}, axis=1).drop("count_matsim", axis=1)
+a = df_vehicle_stock_compare.rename({"count_matsim": "share"}, axis=1).drop("count_beddem", axis=1)
+b = df_vehicle_stock_compare.rename({"count_beddem": "share"}, axis=1).drop("count_matsim", axis=1)
 
 a["case"] = "matsim"
 b["case"] = "beddem"

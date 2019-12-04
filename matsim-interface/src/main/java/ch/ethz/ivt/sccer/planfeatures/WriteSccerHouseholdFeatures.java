@@ -55,6 +55,8 @@ public class WriteSccerHouseholdFeatures {
         catch ( IOException e ) {
             throw new UncheckedIOException( e );
         }
+
+        log.info("Done");
     }
 
 }

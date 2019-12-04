@@ -83,22 +83,22 @@ public class Features {
 				.sum();
 	}
 
-	public static double parkTimeInInterval( Plan plan , double start_s , double end_s ) {
+	public static double driveTimeInInterval(Plan plan , double start_s , double end_s ) {
 		if ( start_s > end_s ) throw new IllegalArgumentException();
 		double driveTime = plan.getPlanElements().stream()
 				.filter( pe -> pe instanceof Leg )
 				.map( pe -> (Leg) pe )
 				.filter( l -> l.getMode().equals( "car" ) )
-				.mapToDouble( l -> parkTimeInInterval( l , start_s , end_s ) )
+				.mapToDouble( l -> driveTimeInInterval( l , start_s , end_s ) )
 				.sum();
-		return end_s - start_s - driveTime;
+		return driveTime;
 	}
 
-	public static ToDoubleFunction<Plan> parkTimeInInterval( final double start_s , final double end_s ) {
-		return p -> parkTimeInInterval( p , start_s , end_s );
+	public static ToDoubleFunction<Plan> driveTimeInInterval(final double start_s , final double end_s ) {
+		return p -> driveTimeInInterval( p , start_s , end_s );
 	}
 
-	private static double parkTimeInInterval( Leg leg , double start_s , double end_s ) {
+	private static double driveTimeInInterval(Leg leg , double start_s , double end_s ) {
 		double dep = leg.getDepartureTime();
 		double arr = leg.getDepartureTime() + leg.getTravelTime();
 
