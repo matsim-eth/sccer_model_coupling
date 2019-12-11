@@ -47,11 +47,14 @@ df_mz_vehicles = (pd.read_csv("{dir}/fahrzeuge.csv".format(dir=mz_dir), encoding
                   )[["mzPersonId", "year_km",
                      "driver_1", "driver_2", "driver_3", "driver_4", "driver_5"]]
 
+print(df_mz_vehicles.head(3))
+df_mz_vehicles["year_km"] = df_mz_vehicles["year_km"].replace([-97, -98, -99], -1)
 df_mz_vehicles = df_mz_vehicles.replace([-97, -98, -99], 100)
 df_mz_vehicles = (df_mz_vehicles
-                  .sort_values(["driver_1", "driver_2", "driver_3", "driver_4", "driver_5"])
+                  .sort_values(["driver_1", "driver_2", "driver_3", "driver_4", "driver_5"], ascending=True)
                   .groupby("mzPersonId", as_index=False).first()
                   )[["mzPersonId", "year_km"]]
+print(df_mz_vehicles.head(3))
 
 features = pd.merge(features, df_mz_vehicles, on='mzPersonId', how='left')
 features = features.query("year_km >= 0")
