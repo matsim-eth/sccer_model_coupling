@@ -230,10 +230,12 @@ print(crosstab_clusters)
 # We should:
 # - visualize the number of cars driving per TOD in a faceted way
 # - export a table containing the number of driven cars per time bin per class
-# 
+#
+
+print(list(pred_meaning.columns))
 
 drive_columns = [v for v in pred_meaning.columns.values if v.startswith("driven_s")]
-
+distance_columns = [v for v in pred_meaning.columns.values if v.startswith("distance_m")]
 
 def decode_time(type):
     def f(name):
@@ -250,10 +252,14 @@ def decode_time(type):
 
     return f
 
-drivetime_per_group = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])[drive_columns].aggregate(np.average)
-drivetime_per_group['n'] = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])["agglo_label"].agg(np.size)
-drivetime_per_group = drivetime_per_group.reset_index()
-drivetime_per_group = pd.melt(drivetime_per_group,
+
+# group by labels, average and count values
+results_per_group = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])[drive_columns + distance_columns].aggregate(np.average)
+results_per_group['n'] = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])["agglo_label"].agg(np.size)
+results_per_group = results_per_group.reset_index()
+
+# melt according to driven time and distance
+drivetime_per_group = pd.melt(results_per_group,
                               id_vars=['year_km_label', 'income_label', 'agglo_label', 'n'], value_vars=drive_columns,
                               var_name="interval_s", value_name="driven_time_s"
                               )
@@ -263,7 +269,18 @@ drivetime_per_group['time_of_day_s'] = drivetime_per_group["interval_s"].apply(d
 drivetime_per_group['time_of_day_h'] = drivetime_per_group['time_of_day_s'] / 3600.0
 drivetime_per_group['driven_time_min'] = drivetime_per_group['driven_time_s'] / 60.0
 drivetime_per_group = drivetime_per_group.drop(columns=['interval_s'])
-print(drivetime_per_group.head(10))
+
+distance_per_group = pd.melt(results_per_group,
+                             id_vars=['year_km_label', 'income_label', 'agglo_label', 'n'], value_vars=distance_columns,
+                             var_name="interval_s", value_name="distance_m"
+                             )
+distance_per_group['time_of_day_s'] = distance_per_group["interval_s"].apply(decode_time('middle'))
+distance_per_group['distance_km'] = distance_per_group['distance_m'] / 1000.0
+distance_per_group = distance_per_group.drop(columns=['interval_s'])
+
+# merge
+results_per_group = pd.merge(drivetime_per_group, distance_per_group, on=['year_km_label', 'income_label', 'agglo_label', 'n', 'time_of_day_s'])
+print(results_per_group.head(10))
 
 # To get nice plots: order categories in a meaningful way
 print("Generating plots...")
@@ -288,13 +305,13 @@ def income_agglo_range(r):
 
 # looks strange, but set cannot get a pandas series in constructor, while list can...
 print("Ordering annual km traveled...")
-distance_ordered = list(set(list(drivetime_per_group.year_km_label)))
+distance_ordered = list(set(list(results_per_group.year_km_label)))
 distance_ordered.sort(key=distance_range)
 print(distance_ordered)
 
 print("Ordering incomes + agglo types...")
-drivetime_per_group['income_agglo_label'] = drivetime_per_group['income_label'].str.cat(drivetime_per_group['agglo_label'], sep='\n')
-income_agglo_ordered = list(set(list(drivetime_per_group.income_agglo_label)))
+results_per_group['income_agglo_label'] = results_per_group['income_label'].str.cat(results_per_group['agglo_label'], sep='\n')
+income_agglo_ordered = list(set(list(results_per_group.income_agglo_label)))
 income_agglo_ordered.sort(key=income_agglo_range)
 print(income_agglo_ordered)
 
@@ -320,22 +337,26 @@ def annotate(n, **kwargs):
 
 
 plt.figure(dpi=120)
-grid = sns.FacetGrid(drivetime_per_group,
-                     row="income_agglo_label", col="year_km_label",  hue="n",
+grid = sns.FacetGrid(results_per_group,
+                     row="income_agglo_label", col="year_km_label", hue="n",
                      row_order=income_agglo_ordered, col_order=distance_ordered,
-                     palette=create_palette(drivetime_per_group.n),
+                     palette=create_palette(results_per_group.n),
                      margin_titles=True)
 grid.map(annotate, "n")
-grid.map(plt.plot, "time_of_day_h", "driven_time_min")
+grid.map(plt.plot, "time_of_day_h", "driven_time_min", color="b")
+grid.map(plt.plot, "time_of_day_h", "distance_km", color="r")
 
 # cleanup
-drivetime_per_group = drivetime_per_group.drop(['income_agglo_label'], axis=1)
+results_per_group = results_per_group.drop(['income_agglo_label'], axis=1)[['year_km_label', 'income_label', 'agglo_label', 'n',
+                                                                            'interval_start_s', 'interval_end_s', 'time_of_day_s', 'time_of_day_h',
+                                                                            'driven_time_s', 'driven_time_min',
+                                                                            'distance_m', 'distance_km']]
 
 # Save outputs
 print("Saving outputs...")
 print(options.figure)
 grid.savefig(options.figure)
 print(options.output)
-drivetime_per_group.to_csv(options.output)
+results_per_group.to_csv(options.output, index=False)
 print("Done")
 
