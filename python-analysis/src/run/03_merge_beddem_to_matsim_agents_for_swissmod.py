@@ -109,7 +109,21 @@ print("--- MATSim ---")
 
 # load in trips (MATSim)
 print("Loading trips...")
-df_trips_matsim = pd.read_csv(filepath_or_buffer=options.matsim_trips, sep=";")
+df_trips_matsim = pd.read_csv(filepath_or_buffer=options.matsim_trips, sep=";",
+                              dtype={'person_id': np.str,
+                                     'person_trip_id': np.int16,
+                                     'origin_x': np.float64,
+                                     'origin_y': np.float64,
+                                     'destination_x': np.float64,
+                                     'destination_y': np.float64,
+                                     'start_time': np.float32,
+                                     'travel_time': np.float32,
+                                     'network_distance': np.float64,
+                                     'mode': np.str,
+                                     'preceedingPurpose': np.str,
+                                     'followingPurpose': np.str,
+                                     'returning': np.bool,
+                                     'crowfly_distance': np.float64})
 
 # dropping trips with freight agents
 df_trips_matsim = df_trips_matsim[~df_trips_matsim["person_id"].str.contains("freight")]
@@ -141,7 +155,6 @@ df_trips_matsim_agg = (df_trips_car[["person_id","network_distance"]]
                        .reset_index()
                        )
 print(df_trips_matsim_agg.head(3))
-
 
 ## Spatial data
 print("--- SPATIAL DATA ---")
