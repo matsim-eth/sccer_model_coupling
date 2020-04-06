@@ -58,6 +58,7 @@ public class TravelDistanceEventHandler implements
 	@Override
 	public void handleEvent(LinkEnterEvent event) {
 		final Id<Person> person = vehicle2Driver.getDriverOfVehicle(event.getVehicleId());
+		if (person.toString().contains("freight")) return;
 		if (!population.getPersons().containsKey(person)) return;
 		final PersonRecord record = records.computeIfAbsent(person, PersonRecord::new);
 		record.start(event.getTime());
@@ -66,6 +67,7 @@ public class TravelDistanceEventHandler implements
 	@Override
 	public void handleEvent(LinkLeaveEvent event) {
 		final Id<Person> person = vehicle2Driver.getDriverOfVehicle(event.getVehicleId());
+		if (person.toString().contains("freight")) return;
 		if (!population.getPersons().containsKey(person)) return;
 		final PersonRecord record = records.computeIfAbsent(person, PersonRecord::new);
 		final double length = getLength(event.getLinkId());
@@ -79,6 +81,7 @@ public class TravelDistanceEventHandler implements
 
 	@Override
 	public void handleEvent(VehicleEntersTrafficEvent event) {
+		if (event.getPersonId().toString().contains("freight")) return;
 		if (!population.getPersons().containsKey(event.getPersonId())) return;
 		vehicle2Driver.handleEvent(event);
 
@@ -88,6 +91,7 @@ public class TravelDistanceEventHandler implements
 
 	@Override
 	public void handleEvent(VehicleLeavesTrafficEvent event) {
+		if (event.getPersonId().toString().contains("freight")) return;
 		if (!population.getPersons().containsKey(event.getPersonId())) return;
 		vehicle2Driver.handleEvent(event);
 
