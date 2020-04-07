@@ -18,7 +18,8 @@ option_parser.add_option("--spatial-structure", dest="spatial_structure", help="
 option_parser.add_option("--consider-cantons", default=False, action="store_true", dest="consider_cantons", help="flag whether to consider cantons when matching")
 option_parser.add_option("--fig-dir", dest="fig_dir", help="output directory for figures")
 option_parser.add_option("--fig-ext", dest="fig_ext", help="figure file extension")
-option_parser.add_option("--output", dest="output", help="output path for output csv")
+option_parser.add_option("--year", dest="year", help="year")
+option_parser.add_option("--output", dest="output", help="output dir")
 options, args = option_parser.parse_args()
 
 
@@ -525,8 +526,42 @@ plt.xlabel("Distance (km)")
 plt.ylabel("# of car trips")
 plt.savefig('{dir}/distance_distribution.{ext}'.format(dir=options.fig_dir, ext=options.fig_ext))
 
-# save to file
+# some final cleaning
+print("Only keeping EVs")
+# only get EVs
+df_ev = df_trips_w_veh[(df_trips_w_veh['powertrain'] == 'PGSL') |
+                       (df_trips_w_veh['powertrain'] == 'PD') |
+                       (df_trips_w_veh['powertrain'] == 'PG') |
+                       (df_trips_w_veh['powertrain'] == 'E')]
+
+# get only vehicle info
+print("Splitting vehicle info from trips.")
+print("Saving vehicle info.")
+vehicle_info = df_ev[['vehicleId', 'vehicleType', 'powertrain', 'consumption']].drop_duplicates().sort_values('vehicleId').reset_index(drop=True)
+vehicle_info['consumption'] = np.round(vehicle_info['consumption'], 5)
+vehicle_info.to_csv('{path}/02-vehicle_info.{year}.csv'.format(path=options.output, year=options.year), sep=",", index=False)
+
+# separate vehicle info from trips
+df_ev_trips = df_ev[['vehicleId', 'startTime', 'endTime', 'startX', 'startY', 'endX', 'endY', 'startActivityType', 'endActivityType', 'travelDistance_km']]
+
+# cast vehicleId as int
+df_ev_trips.loc[:,'vehicleId'] = df_ev_trips['vehicleId'].astype(np.int)
+
+# cast time as int
+df_ev_trips.loc[:,'startTime'] = df_ev_trips['startTime'].astype(np.int)
+df_ev_trips.loc[:,'endTime'] = df_ev_trips['endTime'].astype(np.int)
+
+# round distance to closest m and express in meters, cast as int
+df_ev_trips.loc[:, 'travelDistance_km'] = np.round(df_ev_trips['travelDistance_km'], 3)
+
+# round start and end position to closest m and cast as int
+df_ev_trips.loc[:, 'startX'] = np.round(df_ev_trips['startX']).astype(np.int)
+df_ev_trips.loc[:, 'startY'] = np.round(df_ev_trips['startY']).astype(np.int)
+df_ev_trips.loc[:, 'endX'] = np.round(df_ev_trips['endX']).astype(np.int)
+df_ev_trips.loc[:, 'endY'] = np.round(df_ev_trips['endY']).astype(np.int)
+
+# save trips to file
 print("Saving output...")
-df_trips_w_veh.to_csv(options.output, sep=",", index=False)
+df_ev_trips.to_csv('{path}/01-trips.{year}.csv'.format(path=options.output, year=options.year), sep=",", index=False)
 
 print("Done")

@@ -125,5 +125,6 @@ if update or not os.path.exists("{path}/{year}/01-trips.{year}.csv".format(path=
         "--spatial-structure", "{path}/spatial_structure_2018.xlsx".format(path=data_path),
         "--fig-dir", output_figure_dir,
         "--fig-ext", "png",
-        "--output", "{path}/01-trips.{year}.csv".format(path=output_year_dir, year=year)
+        "--year", year,
+        "--output", output_year_dir
     ])
