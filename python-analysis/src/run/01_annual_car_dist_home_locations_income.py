@@ -372,6 +372,6 @@ print("Saving outputs...")
 print(options.figure)
 grid.savefig(options.figure)
 print(options.output)
-results_per_group.to_csv(options.output, index=False)
+results_per_group.to_csv(options.output, sep=';', index=False)
 print("Done")
 
