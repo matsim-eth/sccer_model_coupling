@@ -74,11 +74,12 @@ print("Features - number of agents", len(features["mzPersonId"]), len(features["
 
 # Add home location agglo type
 df_trips_matsim = pd.read_csv(filepath_or_buffer=options.matsim_trips, sep=";")
+df_trips_matsim = df_trips_matsim[~df_trips_matsim["person_id"].str.contains("freight")] # remove freight trips
 
 # load municipality shapefile
 print("Loading municipality shapefile...")
 print(options.mun_shp)
-df_municipalities = gpd.read_file(options.mun_shp, encoding = "latin1").to_crs({'init': 'EPSG:2056'})
+df_municipalities = gpd.read_file(options.mun_shp, encoding = "latin1").to_crs('EPSG:2056')
 df_municipalities = df_municipalities[["GMDNR", "geometry"]].rename({"GMDNR":"municipality_id"}, axis=1)
 print(df_municipalities.head(3))
 
@@ -232,7 +233,7 @@ print(crosstab_clusters)
 # - export a table containing the number of driven cars per time bin per class
 #
 
-print(list(pred_meaning.columns))
+# print(list(pred_meaning.columns))
 
 drive_columns = [v for v in pred_meaning.columns.values if v.startswith("driven_s")]
 distance_columns = [v for v in pred_meaning.columns.values if v.startswith("distance_m")]
@@ -254,12 +255,12 @@ def decode_time(type):
 
 
 # group by labels, average and count values
-results_per_group = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])[drive_columns + distance_columns].aggregate(np.average)
-results_per_group['n'] = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])["agglo_label"].agg(np.size)
-results_per_group = results_per_group.reset_index()
-
 # melt according to driven time and distance
-drivetime_per_group = pd.melt(results_per_group,
+
+drivetime_per_group = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])[drive_columns].aggregate(np.average)
+drivetime_per_group['n'] = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])["agglo_label"].agg(np.size)
+drivetime_per_group = drivetime_per_group.reset_index()
+drivetime_per_group = pd.melt(drivetime_per_group,
                               id_vars=['year_km_label', 'income_label', 'agglo_label', 'n'], value_vars=drive_columns,
                               var_name="interval_s", value_name="driven_time_s"
                               )
@@ -269,18 +270,32 @@ drivetime_per_group['time_of_day_s'] = drivetime_per_group["interval_s"].apply(d
 drivetime_per_group['time_of_day_h'] = drivetime_per_group['time_of_day_s'] / 3600.0
 drivetime_per_group['driven_time_min'] = drivetime_per_group['driven_time_s'] / 60.0
 drivetime_per_group = drivetime_per_group.drop(columns=['interval_s'])
+drivetime_per_group = drivetime_per_group.sort_values(['time_of_day_s', 'year_km_label', 'income_label', 'agglo_label'])
 
-distance_per_group = pd.melt(results_per_group,
-                             id_vars=['year_km_label', 'income_label', 'agglo_label', 'n'], value_vars=distance_columns,
+# distance per group
+filter_list = distance_columns.copy()
+filter_list.append("year_km")
+
+distance_per_group = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])[filter_list].aggregate(np.average)
+distance_per_group['n'] = pred_meaning.groupby(["year_km_label", "income_label", "agglo_label"])["agglo_label"].agg(np.size)
+distance_per_group = distance_per_group.reset_index()
+distance_per_group = pd.melt(distance_per_group,
+                             id_vars=['year_km_label', 'income_label', 'agglo_label', 'n', 'year_km'], value_vars=distance_columns,
                              var_name="interval_s", value_name="distance_m"
                              )
 distance_per_group['time_of_day_s'] = distance_per_group["interval_s"].apply(decode_time('middle'))
 distance_per_group['distance_km'] = distance_per_group['distance_m'] / 1000.0
 distance_per_group = distance_per_group.drop(columns=['interval_s'])
+distance_per_group = distance_per_group.sort_values(['time_of_day_s', 'year_km_label', 'income_label', 'agglo_label'])
+
+assert len(drivetime_per_group) == len(distance_per_group)
 
 # merge
 results_per_group = pd.merge(drivetime_per_group, distance_per_group, on=['year_km_label', 'income_label', 'agglo_label', 'n', 'time_of_day_s'])
-print(results_per_group.head(10))
+assert len(results_per_group) == len(distance_per_group)
+results_per_group = results_per_group.sort_values(['time_of_day_s', 'year_km_label', 'income_label', 'agglo_label'])
+print(results_per_group.head(30))
+
 
 # To get nice plots: order categories in a meaningful way
 print("Generating plots...")
@@ -350,7 +365,7 @@ grid.map(plt.plot, "time_of_day_h", "distance_km", color="r")
 results_per_group = results_per_group.drop(['income_agglo_label'], axis=1)[['year_km_label', 'income_label', 'agglo_label', 'n',
                                                                             'interval_start_s', 'interval_end_s', 'time_of_day_s', 'time_of_day_h',
                                                                             'driven_time_s', 'driven_time_min',
-                                                                            'distance_m', 'distance_km']]
+                                                                            'distance_m', 'distance_km', 'year_km']]
 
 # Save outputs
 print("Saving outputs...")
