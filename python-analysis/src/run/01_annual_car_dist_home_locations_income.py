@@ -73,8 +73,23 @@ print("Households - number of agents", len(df_mz_households["mzPersonId"]), len(
 print("Features - number of agents", len(features["mzPersonId"]), len(features["mzPersonId"].unique()))
 
 # Add home location agglo type
-df_trips_matsim = pd.read_csv(filepath_or_buffer=options.matsim_trips, sep=";")
+df_trips_matsim = pd.read_csv(filepath_or_buffer=options.matsim_trips, sep=";",
+                              dtype={'person_id': np.str,
+                                     'person_trip_id': np.int16,
+                                     'origin_x': np.float64,
+                                     'origin_y': np.float64,
+                                     'destination_x': np.float64,
+                                     'destination_y': np.float64,
+                                     'start_time': np.float32,
+                                     'travel_time': np.float32,
+                                     'network_distance': np.float64,
+                                     'mode': np.str,
+                                     'preceedingPurpose': np.str,
+                                     'followingPurpose': np.str,
+                                     'returning': np.bool,
+                                     'crowfly_distance': np.float64})
 df_trips_matsim = df_trips_matsim[~df_trips_matsim["person_id"].str.contains("freight")] # remove freight trips
+df_trips_matsim["person_id"] = df_trips_matsim["person_id"].astype(np.int64)
 
 # load municipality shapefile
 print("Loading municipality shapefile...")
