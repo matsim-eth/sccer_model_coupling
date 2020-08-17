@@ -1,0 +1,36 @@
+## Pipeline config for SCCER model coupling
+## based on the synpp package
+
+# This is the path to a directory where the pipeline can store temporary data
+working_directory: /home/tchervec/git/java/sccer_model_coupling/python-analysis/pipeline/cache
+
+# This section defines which parts of the pipeline should be run
+run:
+#  - matsim.runtime.matsim_interface # To create the output population in the output_path (see below)
+  - data.matsim.mz_person_id
+#  - data.beddem.trips
+#  - data.beddem.trips_enriched
+  - synthesis.beddem.matsim_agents
+#  - synthesis.beddem.beddem_agents
+#  - synthesis.beddem.matched
+  #- matsim.output # Uncomment, if you want to run the full simulation (you'll need Java for that)
+
+# Here the configuration of the pipeline starts
+config:
+  # Some general configuration
+  processes: 4
+
+  # Define sampling rate and random seed for the output population
+  random_seed: 1234
+
+  # Paths to the input data and where the output should be stored
+  data_path: /home/tchervec/Documents/data/switzerland/data
+  javs_path: /home/tchervec/git/JA_Mobility_exchange
+  scenario_path: /home/tchervec/temp_euler/sccer_model_coupling/scenarios/switzerland_1pm_
+  scenario: S000
+  year: 2020
+  git_path: /home/tchervec/git/java/sccer_model_coupling
+  output_path: output
+
+  # Only interesting if you run the simulation
+  java_memory: 14G
